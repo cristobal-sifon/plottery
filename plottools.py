@@ -482,8 +482,23 @@ def wcslabels(wcs, xlim, ylim, xsep='00:00:01', ysep='00:00:15'):
     ----------
         wcs     : astWCS.WCS instance
                   the wcs of the image to be shown
-        xlim    :
-                  the minimum and maximum
+        xlim    : sequence of length 2
+                  the minimum and maximum values of the x axis
+        ylim    : sequence of length 2
+                  the minimum and maximum values of the y axis
+        xsep    : string
+                  separation of right ascension ticks in the x axis,
+                  in colon-separated hms format
+        xsep    : string
+                  separation of declination ticks in the y axis, in
+                  colon-separated dms format
+
+    Returns
+    -------
+        [xticks, xticklabels] : lists containing the positions and labels
+                  for right ascension hms labels
+        [yticks, yticklabels] : lists containing the positions and labels
+                  for declination dms labels
 
     """
     def roundout(label):
