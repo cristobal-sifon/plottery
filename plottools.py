@@ -297,6 +297,8 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     # diagonals first
     plot_ranges = []
     axes_diagonal = []
+    # for backward compatibility
+    histtype = style1d.replace('hist', 'step')
     for i in xrange(ndim):
         ax = pylab.axes([0.1+axsize*i, 0.95-axsize*(i+1),
                          0.95*axsize, 0.95*axsize],
@@ -306,71 +308,42 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             ax.set_xticklabels([])
         peak = 0
         edges = []
-        if style1d == 'curve':
-            for m, Xm in enumerate(X):
-                edges.append([])
+        for m, Xm in enumerate(X):
+            edges.append([])
+            if style1d == 'curve':
                 ho, e = histogram(Xm[i], bins=bins1d[m], normed=True)
-                edges[-1].append(e)
                 xo = 0.5 * (e[1:] + e[:-1])
                 xn = linspace(min(xo), max(xo), 500)
-                hn = interpolate.spline(xo, ho, xn)
-                ax.plot(xn, hn, ls=ls1d[m], color=color1d[m])
-                if max(hn) > peak:
-                    peak = max(hn)
-                area = ho.sum()
-                # mark median and percentiles
-                if medians1d:
-                    ax.axvline(median(Xm[i]), ls=ls1d[m], color=color1d[m])
-                if verbose:
-                    if len(names) == len(X):
-                        print names[m]
-                    if labels is not None:
-                        print '  %s' %(labels[i]),
-                        if truths is None:
-                            print ''
-                        else:
-                            print '({0})'.format(truths[i])
-                        print ' ', median(Xm[i])
-                for p, ls in izip(clevels, axvls):
-                    v = [percentile(Xm[i], 100*(1-p)/2.),
-                         percentile(Xm[i], 100*(1+p)/2.)]
-                    if percentiles1d:
-                        ax.axvline(v[0], ls=ls, color=color1d[m])
-                        ax.axvline(v[1], ls=ls, color=color1d[m])
-                    if verbose and labels is not None:
-                        print '    p%.1f ' %(100*p), v[0], v[1]
-        else:
-            # for backward compatibility
-            histtype = style1d.replace('hist', 'step')
-            for m, Xm in enumerate(X):
-                edges.append([])
+                n = interpolate.spline(xo, ho, xn)
+                ax.plot(xn, n, ls=ls1d[m], color=color1d[m])
+            else:
                 n, e, patches = ax.hist(Xm[i], bins=bins1d[m],
                                         histtype=histtype,
                                         color=color1d[m], normed=True)
-                edges[-1].append(e)
-                if max(n) > peak:
-                    peak = max(n)
-                area = n.sum()
-                if medians1d:
-                    ax.axvline(median(Xm[i]), ls='-', color=color1d[m])
+            edges[-1].append(e)
+            if max(n) > peak:
+                peak = max(n)
+            area = n.sum()
+            if medians1d:
+                ax.axvline(median(Xm[i]), ls='-', color=color1d[m])
+            if verbose:
+                if len(names) == len(X):
+                    print names[m]
+                if labels is not None:
+                    print '  %s' %(labels[i]),
+                    if truths is None:
+                        print ''
+                    else:
+                        print '({0})'.format(truths[i])
+                    print ' ', median(Xm[i])
+            for p, ls in izip(clevels, axvls):
+                v = [percentile(Xm[i], 100*(1-p)/2.),
+                        percentile(Xm[i], 100*(1+p)/2.)]
+                if percentiles1d:
+                    ax.axvline(v[0], ls=ls, color=color1d[m])
+                    ax.axvline(v[1], ls=ls, color=color1d[m])
                 if verbose:
-                    if len(names) == len(X):
-                        print names[m]
-                    if labels is not None:
-                        print '  %s' %(labels[i]),
-                        if truths is None:
-                            print ''
-                        else:
-                            print '({0})'.format(truths[i])
-                        print ' ', median(Xm[i])
-                for p, ls in izip(clevels, axvls):
-                    v = [percentile(Xm[i], 100*(1-p)/2.),
-                         percentile(Xm[i], 100*(1+p)/2.)]
-                    if percentiles1d:
-                        ax.axvline(v[0], ls=ls, color=color1d[m])
-                        ax.axvline(v[1], ls=ls, color=color1d[m])
-                    if verbose:
-                        print '    p%.1f  %.2f  %.2f' %(100*p, v[0], v[1])
+                    print '    p%.1f  %.2f  %.2f' %(100*p, v[0], v[1])
         if likelihood is not None:
             for m, Xm, Lm, e in izip(count(), X, likelihood, edges):
                 #print Lm.min(), Lm.max()
