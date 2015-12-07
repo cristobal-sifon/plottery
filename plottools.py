@@ -240,7 +240,8 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             print 'number of parameters'
             smooth = [0 for i in X[0]]
     except TypeError:
-        smooth = [smooth for i in X[0]]
+        if smooth not in (False, None):
+            smooth = [smooth for i in X[0]]
     # check the binning scheme.
     # All of this should only apply to calls containing more than one chain.
     if ndim > 1:
@@ -418,23 +419,22 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             ax = pylab.axes([0.1+axsize*j, 0.95-axsize*(i+1),
                              0.95*axsize, 0.95*axsize])
             axes_off.append(ax)
+            extent = append(plot_ranges[j], plot_ranges[i])
             for m, Xm in enumerate(X):
-                h = histogram2d(Xm[j], Xm[i], bins=bins[m],
-                                range=(plot_ranges[j],plot_ranges[i]))
-                h = transpose(h[0])
-                if smooth:
+                h, xe, ye = histogram2d(Xm[j], Xm[i], bins=bins[m])
+                h = h.T
+                extent = (xe[0], xe[-1], ye[0], ye[-1])
+                if smooth not in (False, None):
                     h = gaussian_filter(h, (smooth[i],smooth[j]))
                 levels = contour_levels(Xm[j], Xm[i], bins=bins[m],
                                         levels=clevels)
-                extent = append(plot_ranges[j], plot_ranges[i])
                 if background == 'points':
                     if not (cmap is None or bweight is None):
                         ax.scatter(Xm[j], Xm[i], c=bweight, marker='.',
                                    s=4, lw=0, cmap=cmap, zorder=-10)
                     else:
                         ax.plot(Xm[j], Xm[i], ',',
-                                color=bcolor, alpha=alpha,
-                                zorder=-10)
+                                color=bcolor, alpha=alpha, zorder=-10)
                 elif background == 'density':
                     ax.imshow([Xm[i], Xm[j]], cmap=cm.Reds,
                                extent=extent)
@@ -451,8 +451,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                         if len(bcolor[l-1]) == 3:
                             bcolor[l-1] = [bcolor[l-1]]
                         ax.contourf(h, (lvs[l-1],lvs[l]),
-                                    extent=extent, colors=bcolor[l-1])#,
-                                    #antialiased=True)
+                                    extent=extent, colors=bcolor[l-1])
                 if show_contour:
                     ax.contour(h, levels, colors=color1d[m],
                                linestyles=ls2d[m], extent=extent,
