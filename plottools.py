@@ -87,15 +87,14 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                   in the (empty) upper corner
       labels    : list of strings (optional)
                   names of the parameters
-      bins      : int or array (default 20)
+      bins      : int or array of ints (default 20)
                   Number of bins for the contours in the off-diagonal panels.
-                  Should be one value per chain, but if only a single value
-                  is given it will be taken to be the same for all chains
-      bins1d    : int or array (default 20)
+                  Should be one value per chain, one value per parameter,
+                  or have shape (nchains,nparams)
+      bins1d    : int or array of ints (default 20)
                   Number of bins for the histograms or curves in the diagonal
-                  panels. Should be one value per chain, but if only a single
-                  value is given it will be taken to be the same for all
-                  chains.
+                  panels. Should be one value per chain, one value per
+                  parameter, or have shape (nchains,nparams)
       clevels   : list of floats between 0 and 1 (default: (0.68,0.95))
                   percentiles at which to show contours
       contour_reference : {'samples', 'likelihood'} (default 'samples')
@@ -182,16 +181,6 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     # arguments. Returns zero if scalar.
     depth = lambda L: (isinstance(L, (list,tuple,numpy.ndarray)) and \
                        max(map(depth, L)) + 1) or 0
-    #depth = lambda L: (type(L) in (list, tuple, numpy.ndarray) and \
-                       #max(map(depth, L)) + 1) or 0
-    #def depth(L):
-        #print 'L =', L
-        ##x = isinstance(L, (list,tuple,numpy.ndarray)) and \
-            ##max(map(depth, L)) + 1
-        ##print x
-        ##return x or 0
-        #return (isinstance(L, (list,tuple,numpy.ndarray)) and \
-                #max(map(depth, L)) + 1) or 0
 
     nchains = len(X) if depth(X) > 1 else 1
     if nchains > 1:
