@@ -176,24 +176,33 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     if style1d == 'curve':
         from scipy import interpolate
 
+    # not yet implemented
     options = _load_corner_config(config)
+    # the depth of an array or list. Useful to assess the proper format of
+    # arguments. Returns zero if scalar.
+    depth = lambda L: (isinstance(L, (list,tuple,numpy.ndarray)) and \
+                       max(map(depth, L)) + 1) or 0
+    #depth = lambda L: (type(L) in (list, tuple, numpy.ndarray) and \
+                       #max(map(depth, L)) + 1) or 0
+    #def depth(L):
+        #print 'L =', L
+        ##x = isinstance(L, (list,tuple,numpy.ndarray)) and \
+            ##max(map(depth, L)) + 1
+        ##print x
+        ##return x or 0
+        #return (isinstance(L, (list,tuple,numpy.ndarray)) and \
+                #max(map(depth, L)) + 1) or 0
 
-    y = X[0]
-    # the maximum should actually be three
-    for nnames in xrange(5):
-        try:
-            y = y[0]
-        except IndexError:
-            break
-    if nnames > 1:
+    nchains = len(X) if depth(X) > 1 else 1
+    if nchains > 1:
         ndim = len(X[0])
         nsamples = len(X[0][0])
+        if background == 'points':
+            background = None
     else:
         ndim = len(X)
         nsamples = len(X[0])
         X = (X,)
-    if len(X) > 1 and background == 'points':
-        background = None
     if nsamples == 0:
         msg = 'plottools.corner: received empty array.'
         msg += ' It is possible that you set the burn-in to be longer'
@@ -211,10 +220,10 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             print 'WARNING: number of limit lists does not match',
             print 'number of parameters'
             limits = None
-    # check clevels
-    if 1 < clevels[0] <= 100:
+    # check clevels - they should be fractions between 0 and 1.
+    if 1 < max(clevels) <= 100:
         clevels = [cl/100. for cl in clevels]
-    elif clevels[0] > 100:
+    elif max(clevels) > 100:
         msg = 'ERROR: contour levels must be between 0 and 1 or between'
         msg += ' 0 and 100'
         print msg
@@ -228,7 +237,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
         msg = 'WARNING: likelihood format not right - setting to None'
         if len(likelihood.shape) == 1:
             likelihood = (likelihood,)
-        if len(likelihood) != nnames:
+        if len(likelihood) != nchains:
             print msg
             likelihood = None
         if len(likelihood[0]) != nsamples:
@@ -243,32 +252,42 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
         if smooth not in (False, None):
             smooth = [smooth for i in X[0]]
     # check the binning scheme.
-    # All of this should only apply to calls containing more than one chain.
-    if ndim > 1:
-        # this will fail if bins is a scalar
+    meta_bins = [bins, bins1d]
+    for i, bname in enumerate(('bins','bins1d')):
+        bi = meta_bins[i]
+        # will fail if bi is a scalar
         try:
-            nbins = len(bins)
+            bidepth = depth(bi)
         except TypeError:
-            nbins = 1
-        if nbins == 1:
-            bins = bins * numpy.ones(ndim)
-        elif nbins != ndim:
-            msg = 'ERROR: number of bin values must equal number of chains'
+            bidepth = 0
+        print bname, bi, bidepth
+        # will be the same message in all cases below
+        msg = 'ERROR: number of {0} must equal either number'.format(bname)
+        msg += ' of chains or number of parameters, or have shape'
+        msg += ' (nchains,nparams)'
+        # this means binning will be the same for all chains
+        ones = numpy.ones((nchains,ndim))
+        # is it a scalar?
+        if bidepth == 0:
+            meta_bins[i] = bi * ones
+            #bi = bi * ones
+        # or a 1d list?
+        elif bidepth == 1:
+            bi = numpy.array(bi)
+            if len(bi) == ndim:
+                meta_bins[i] = ones * bi
+            elif len(bi) == nchains:
+                meta_bins[i] = ones * bi[:,numpy.newaxis]
+            else:
+                print msg
+                exit()
+        elif (bidepth == 2 and nchains > 1 and \
+              numpy.array(bi).shape != ones.shape) or \
+             bidepth > 2:
             print msg
             exit()
-    # the same as above with bins1d
-    if ndim > 1:
-        # this will fail if bins is a scalar
-        try:
-            nbins1d = len(bins1d)
-        except TypeError:
-            nbins1d = 1
-        if nbins1d == 1:
-            bins1d = bins1d * numpy.ones(ndim)
-        elif nbins1d != ndim:
-            msg = 'ERROR: number of bin1d values must equal number of chains'
-            print msg
-            exit()
+    bins, bins1d = meta_bins
+    print 'meta_bins:', meta_bins
     # figure size
     if ndim > 3:
         figsize = 2 * ndim
@@ -309,15 +328,16 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
         peak = 0
         edges = []
         for m, Xm in enumerate(X):
+            print i, m
             edges.append([])
             if style1d == 'curve':
-                ho, e = histogram(Xm[i], bins=bins1d[m], normed=True)
+                ho, e = histogram(Xm[i], bins=bins1d[m][i], normed=True)
                 xo = 0.5 * (e[1:] + e[:-1])
                 xn = linspace(min(xo), max(xo), 500)
                 n = interpolate.spline(xo, ho, xn)
                 ax.plot(xn, n, ls=ls1d[m], color=color1d[m])
             else:
-                n, e, patches = ax.hist(Xm[i], bins=bins1d[m],
+                n, e, patches = ax.hist(Xm[i], bins=bins1d[m][i],
                                         histtype=histtype,
                                         color=color1d[m], normed=True)
             edges[-1].append(e)
@@ -394,12 +414,12 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             axes_off.append(ax)
             extent = append(plot_ranges[j], plot_ranges[i])
             for m, Xm in enumerate(X):
-                h, xe, ye = histogram2d(Xm[j], Xm[i], bins=bins[m])
+                h, xe, ye = histogram2d(Xm[j], Xm[i], bins=bins[m][i])
                 h = h.T
                 extent = (xe[0], xe[-1], ye[0], ye[-1])
                 if smooth not in (False, None):
                     h = gaussian_filter(h, (smooth[i],smooth[j]))
-                levels = contour_levels(Xm[j], Xm[i], bins=bins[m],
+                levels = contour_levels(Xm[j], Xm[i], bins=bins[m][i],
                                         levels=clevels)
                 if background == 'points':
                     if not (cmap is None or bweight is None):
@@ -413,7 +433,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                                extent=extent)
                 elif background == 'filled':
                     clvs = append(clevels, 1)
-                    lvs = contour_levels(Xm[j], Xm[i], bins=bins[m],
+                    lvs = contour_levels(Xm[j], Xm[i], bins=bins[m][i],
                                          levels=clvs)
                     try:
                         if type(bcolor[0]) == tuple:
