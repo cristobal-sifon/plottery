@@ -7,7 +7,25 @@ To install, clone this repository to somewhere in your python path by doing:
     git clone git@github.com:cristobal-sifon/plottools.git
 ```
 
-This module is focused mostly on two functions: ``plottools.corner`` and ``plottools.wcslabels``. Both have explanatory help files but briefly,
+To get started, open an IPython terminal and type
+
+```
+    >>> import plottools
+```
+
+This module is focused mostly on two functions: ``plottools.corner`` and ``plottools.wcslabels``. Both have explanatory help files. To see them, type
+
+```
+    >>> help(plottools.corner)
+```
+
+or 
+
+```
+    >>> help(plottools.wcslabels)
+```
+
+Briefly,
 
 ```
     plottools.corner
