@@ -1,15 +1,22 @@
 # plottools
-Plotting tools
+(Not so) Generic plotting tools
 
-This module is focused mostly on two functions: corner() and wcslabels(). Both have explanatory help files but briefly,
+To install, clone this repository to somewhere in your python path by doing:
+
+::
+
+    git clone git@github.com:cristobal-sifon/plottools.git
+
+This module is focused mostly on two functions: ``plottools.corner`` and ``plottools.wcslabels``. Both have explanatory help files but briefly,
+
+::
 
     plottools.corner()
 
- * Make a corner plot, typically to view the output of an MCMC (see figure 6 of http://adsabs.harvard.edu/abs/2015MNRAS.454.3938S for a plot made with this function).
- * Can handle as many parameters as desired, multiple chains, and has many options to tailor the style to the user and the problem at hand.
+ * Make a corner plot, typically to view the output of an MCMC. It can handle as many parameters as desired, multiple chains, and has many options to tailor the style to the user and the problem at hand. Additionally, it returns the Figure and Axes objects, so the user can add features at will on top of the corner plot itself. For an example corner plot see figure 6 of `Sifon et al. (2015) <http://arxiv.org/abs/1507.00737>`_).
+
+::
 
     plottools.wcslabels()
 
- * Create right ascension and declination ticks in hms and dms formats, respectively, given axis limits in decimal degrees.
- 
- 
+ * Create right ascension and declination ticklabels in hms and dms formats, respectively, given axis limits in decimal degrees.
