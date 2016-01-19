@@ -10,19 +10,19 @@ To install, clone this repository to somewhere in your python path by doing:
 To get started, open an IPython terminal and type
 
 ```
-    >>> import plottools
+    import plottools
 ```
 
 This module is focused mostly on two functions: ``plottools.corner`` and ``plottools.wcslabels``. Both have explanatory help files. To see them, type
 
 ```
-    >>> help(plottools.corner)
+    help(plottools.corner)
 ```
 
 or 
 
 ```
-    >>> help(plottools.wcslabels)
+    help(plottools.wcslabels)
 ```
 
 Briefly,
