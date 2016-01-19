@@ -6,6 +6,29 @@ from scipy import optimize
 from scipy.ndimage import zoom
 
 def contour_levels(x, y=[], bins=10, levels=(0.68,0.95)):
+    """
+    Get the contour levels corresponding to a set of percentiles (given as
+    fraction of 1) for a 2d histogram.
+
+    Parameters
+    ----------
+        x : array of floats
+            if y is given then x must be a 1d array. If y is not given then
+            x should be a 2d array
+        y : array of floats (optional)
+            1d array with the same number of elements as x
+        bins : argument of numpy.histogram2d
+        levels : list of floats between 0 and 1
+            the fractional percentiles of the data that should be above the
+            returned values
+
+    Returns
+    -------
+        level_values : list of floats, same length as *levels*
+            The values of the histogram above which the fractional percentiles
+            of the data given by *levels* are
+
+    """
     if len(y) > 0:
         if len(x) != len(y):
             msg = 'Invalid input for arrays; must be either 1 2d array'
@@ -24,9 +47,9 @@ def contour_levels(x, y=[], bins=10, levels=(0.68,0.95)):
         extent = (xedges[0], xedges[-1], yedges[0], yedges[-1])
     elif len(y) == 0:
         hist = numpy.array(x)
-    lvs = [optimize.bisect(findlevel, hist.min(), hist.max(),
-                           args=(hist, l)) for l in levels]
-    return lvs
+    level_values = [optimize.bisect(findlevel, hist.min(), hist.max(),
+                                    args=(hist,l)) for l in levels]
+    return level
 
 def contours_external(ax, imgwcs, contourfile, levels, colors, lw=1):
     """
@@ -179,10 +202,9 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     options = _load_corner_config(config)
     # the depth of an array or list. Useful to assess the proper format of
     # arguments. Returns zero if scalar.
-    depth = lambda L: (isinstance(L, (list,tuple,numpy.ndarray)) and \
-                       max(map(depth, L)) + 1) or 0
+    depth = lambda L: (hasattr(L, '__iter__') and max(map(depth,L)) + 1) or 0
 
-    nchains = len(X) if depth(X) > 1 else 1
+    nchains = (len(X) if depth(X) > 1 else 1)
     if nchains > 1:
         ndim = len(X[0])
         nsamples = len(X[0][0])
@@ -223,13 +245,13 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             truths = None
     # check likelihood
     if likelihood is not None:
-        msg = 'WARNING: likelihood format not right - setting to None'
-        if len(likelihood.shape) == 1:
-            likelihood = (likelihood,)
-        if len(likelihood) != nchains:
-            print msg
-            likelihood = None
-        if len(likelihood[0]) != nsamples:
+        msg = 'WARNING: likelihood format not right - ignoring'
+        lshape = likelihood.shape
+        
+        if len(lshape) == 1:
+            likelihood = [likelihood]
+        if lshape[0] != nchains or lshape[1] != nsamples \
+            or len(lshape) != 2:
             print msg
             likelihood = None
     try:
@@ -249,7 +271,6 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             bidepth = depth(bi)
         except TypeError:
             bidepth = 0
-        print bname, bi, bidepth
         # will be the same message in all cases below
         msg = 'ERROR: number of {0} must equal either number'.format(bname)
         msg += ' of chains or number of parameters, or have shape'
@@ -259,7 +280,6 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
         # is it a scalar?
         if bidepth == 0:
             meta_bins[i] = bi * ones
-            #bi = bi * ones
         # or a 1d list?
         elif bidepth == 1:
             bi = numpy.array(bi)
@@ -276,7 +296,6 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             print msg
             exit()
     bins, bins1d = meta_bins
-    print 'meta_bins:', meta_bins
     # figure size
     if ndim > 3:
         figsize = 2 * ndim
@@ -284,7 +303,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
         figsize= 3 * ndim
     axsize = 0.85 / ndim
     if len(X) == 1:
-        if type(colors) == str:
+        if isinstance(colors, basestring):
             color1d = colors
         else:
             color1d = 'k'
@@ -295,9 +314,9 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
         else:
             color1d = ('g', 'orange', 'c', 'm', 'b', 'y',
                        'g', 'orange', 'c', 'm', 'b', 'y')
-    if type(ls1d) == str:
+    if isinstance(ls1d, basestring):
         ls1d = [ls1d for i in X]
-    if type(ls2d) == str:
+    if isinstance(ls2d, basestring):
         ls2d = [ls2d for i in X]
     # all set!
     axvls = ('--', ':', '-.')
@@ -317,12 +336,11 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
         peak = 0
         edges = []
         for m, Xm in enumerate(X):
-            print i, m
             edges.append([])
             if style1d == 'curve':
                 ho, e = histogram(Xm[i], bins=bins1d[m][i], normed=True)
                 xo = 0.5 * (e[1:] + e[:-1])
-                xn = linspace(min(xo), max(xo), 500)
+                xn = linspace(xo.min(), xo.max(), 500)
                 n = interpolate.spline(xo, ho, xn)
                 ax.plot(xn, n, ls=ls1d[m], color=color1d[m])
             else:
@@ -330,8 +348,8 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                                         histtype=histtype,
                                         color=color1d[m], normed=True)
             edges[-1].append(e)
-            if max(n) > peak:
-                peak = max(n)
+            if n.max() > peak:
+                peak = n.max()
             area = n.sum()
             if medians1d:
                 ax.axvline(median(Xm[i]), ls='-', color=color1d[m])
@@ -425,7 +443,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                     lvs = contour_levels(Xm[j], Xm[i], bins=bins[m][i],
                                          levels=clvs)
                     try:
-                        if type(bcolor[0]) == tuple:
+                        if hasattr(bcolor[0], '__iter__'):
                             bcolor = [bc for bc in bcolor]
                     except TypeError:
                         pass
@@ -453,16 +471,13 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                 ax.set_yticklabels([])
             if i < ndim - 1:
                 ax.set_xticklabels([])
-            # to avoid overcrowding tick labels
-            #if limits is not None:
-                #pylab.xlim(*limits[j])
-                #pylab.ylim(*limits[i])
             ax.set_xlim(*plot_ranges[j])
             ax.set_ylim(*plot_ranges[i])
             if ticks is not None:
                 ax.set_xticks(ticks[j])
                 ax.set_yticks(ticks[i])
             else:
+                # to avoid overcrowding tick labels
                 xloc = pylab.MaxNLocator(4)
                 ax.xaxis.set_major_locator(xloc)
                 yloc = pylab.MaxNLocator(4)
@@ -474,7 +489,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                           0.95*axsize, 0.95*axsize],
                          xticks=[], yticks=[])
         lax.set_frame_on(False)
-        for c, model in zip(color1d, names):
+        for c, model in izip(color1d, names):
             pylab.plot([], [], ls='-', lw=2, color=c, label=model)
         lg = pylab.legend(loc='center', ncol=1)
         lg.get_frame().set_alpha(0)
@@ -579,6 +594,10 @@ def wcslabels(wcs, xlim, ylim, xsep='00:00:01', ysep='00:00:15'):
     return [xticks, xticklabels], [yticks, yticklabels]
 
 def _load_corner_config(config):
+    """
+    Not implemented!
+
+    """
     options = {}
     # is there a configuration file at all!?
     if config is None:
