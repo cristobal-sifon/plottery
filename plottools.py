@@ -49,7 +49,7 @@ def contour_levels(x, y=[], bins=10, levels=(0.68,0.95)):
         hist = numpy.array(x)
     level_values = [optimize.bisect(findlevel, hist.min(), hist.max(),
                                     args=(hist,l)) for l in levels]
-    return level
+    return level_values
 
 def contours_external(ax, imgwcs, contourfile, levels, colors, lw=1):
     """
@@ -204,7 +204,8 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     # arguments. Returns zero if scalar.
     depth = lambda L: (hasattr(L, '__iter__') and max(map(depth,L)) + 1) or 0
 
-    nchains = (len(X) if depth(X) > 1 else 1)
+    nchains = (len(X) if depth(X) > 2 else 1)
+    print X.shape, depth(X), nchains
     if nchains > 1:
         ndim = len(X[0])
         nsamples = len(X[0][0])
