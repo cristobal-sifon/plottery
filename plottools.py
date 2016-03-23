@@ -1,7 +1,9 @@
 import numpy
+import pylab
 from astLib import astCoords, astWCS
 from astropy.io import fits
 from itertools import count, izip
+from matplotlib import ticker
 from scipy import optimize
 from scipy.ndimage import zoom
 
@@ -49,7 +51,7 @@ def contour_levels(x, y=[], bins=10, levels=(0.68,0.95)):
         hist = numpy.array(x)
     level_values = [optimize.bisect(findlevel, hist.min(), hist.max(),
                                     args=(hist,l)) for l in levels]
-    return level
+    return level_values
 
 def contours_external(ax, imgwcs, contourfile, levels, colors, lw=1):
     """
@@ -77,7 +79,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
            smooth=False, likelihood=None, likesmooth=1, colors='k', cmap=None,
            ls1d='-', ls2d='solid', style1d='curve', medians1d=True,
            percentiles1d=True, background=None, bweight=None, bcolor='r',
-           alpha=0.5, limits=None,
+           alpha=0.5, limits=None, show_likelihood_1d=False,
            ticks=None, show_contour=True, top_labels=False, output='',
            verbose=False, **kwargs):
     """
@@ -120,11 +122,11 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                   parameter, or have shape (nchains,nparams)
       clevels   : list of floats between 0 and 1 (default: (0.68,0.95))
                   percentiles at which to show contours
-      contour_reference : {'samples', 'likelihood'} (default 'samples')
+      contour_reference : {'samples', 'chi2'} (default 'samples')
                   whether to draw contour on fractions of samples or
                   on likelihood levels. In the former case, *clevels*
                   must be floats between 0 and 1; in the latter, the
-                  levels of the log-likelihood.
+                  levels of the chi2. ONLY 'samples' IMPLEMENTED
       truths    : {list of floats, 'medians', None} (default None)
                   reference values for each parameter, to be shown in
                   each panel
@@ -134,7 +136,11 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                   the contours are not smoothed.
       likelihood : array of floats (optional)
                   the likelihood surface, to be shown as a histogram in the
-                  diagonals.
+                  diagonals or to be used to define the 2d contours. If
+                  contour_reference=='chi2' then provide the chi2 here
+                  instead of the likelihood
+      show_likelihood_1d : bool (WILL I USE THIS ONE?)
+                  whether to show the likelihood in the diagonal panels
       likesmooth : int (default 1000)
                   the number of maxima to average over to show the
                   likelihood surface
@@ -191,7 +197,6 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                   off-diagonal) instances
 
     """
-    import pylab
     from numpy import append, array, digitize, exp, histogram, histogram2d
     from numpy import linspace, median, percentile, sort, transpose
     from scipy.ndimage.filters import gaussian_filter
@@ -202,8 +207,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     options = _load_corner_config(config)
     # the depth of an array or list. Useful to assess the proper format of
     # arguments. Returns zero if scalar.
-    depth = lambda L: (hasattr(L, '__iter__') and max(map(depth,L)) + 1) or 0
-
+    depth = lambda L: (hasattr(L, '__iter__') and max(map(depth,L))) or 0
     nchains = (len(X) if depth(X) > 1 else 1)
     if nchains > 1:
         ndim = len(X[0])
@@ -231,29 +235,39 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             print 'WARNING: number of limit lists does not match',
             print 'number of parameters'
             limits = None
-    # check clevels - they should be fractions between 0 and 1.
-    if 1 < max(clevels) <= 100:
-        clevels = [cl/100. for cl in clevels]
-    elif max(clevels) > 100:
-        msg = 'ERROR: contour levels must be between 0 and 1 or between'
-        msg += ' 0 and 100'
-        print msg
-        exit()
-    # check truths
-    if truths is not None:
-        if len(truths) != ndim:
-            truths = None
     # check likelihood
-    if likelihood is not None:
+    if likelihood is not None and show_likelihood_1d:
         msg = 'WARNING: likelihood format not right - ignoring'
         lshape = likelihood.shape
-        
+
         if len(lshape) == 1:
             likelihood = [likelihood]
         if lshape[0] != nchains or lshape[1] != nsamples \
             or len(lshape) != 2:
             print msg
             likelihood = None
+    # check clevels - they should be fractions between 0 and 1 for
+    # contour_reference == 'samples'.
+    #if contour_reference != 'samples':
+        #msg = 'ERROR: only "samples" option implemented for'
+        #msg += ' contour_reference. Setting contour_reference="samples"'
+        #print msg
+        #contour_reference = 'samples'
+    if contour_reference == 'samples':
+        if 1 < max(clevels) <= 100:
+            clevels = [cl/100. for cl in clevels]
+        elif max(clevels) > 100:
+            msg = 'ERROR: contour levels must be between 0 and 1 or between'
+            msg += ' 0 and 100'
+            print msg
+            exit()
+    # check truths
+    if truths is not None:
+        if len(truths) != ndim:
+            msg = 'WARNING: number of truth values does not match number'
+            msg += ' of parameters'
+            print msg
+            truths = None
     try:
         if len(smooth) != len(X[0]):
             print 'WARNING: number smoothing widths must be equal to',
@@ -297,7 +311,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             exit()
     bins, bins1d = meta_bins
     # figure size
-    if ndim > 3:
+    if ndim > 4:
         figsize = 2 * ndim
     else:
         figsize= 3 * ndim
@@ -365,7 +379,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                     print ' ', median(Xm[i])
             for p, ls in izip(clevels, axvls):
                 v = [percentile(Xm[i], 100*(1-p)/2.),
-                        percentile(Xm[i], 100*(1+p)/2.)]
+                     percentile(Xm[i], 100*(1+p)/2.)]
                 if percentiles1d:
                     ax.axvline(v[0], ls=ls, color=color1d[m])
                     ax.axvline(v[1], ls=ls, color=color1d[m])
@@ -421,13 +435,17 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             axes_off.append(ax)
             extent = append(plot_ranges[j], plot_ranges[i])
             for m, Xm in enumerate(X):
-                h, xe, ye = histogram2d(Xm[j], Xm[i], bins=bins[m][i])
-                h = h.T
-                extent = (xe[0], xe[-1], ye[0], ye[-1])
-                if smooth not in (False, None):
-                    h = gaussian_filter(h, (smooth[i],smooth[j]))
-                levels = contour_levels(Xm[j], Xm[i], bins=bins[m][i],
-                                        levels=clevels)
+                if contour_reference == 'likelihood':
+                    ax.contour(Xm[j], Xm[i], likelihood, levels=clevels)
+                    continue
+                if contour_reference == 'samples':
+                    h, xe, ye = histogram2d(Xm[j], Xm[i], bins=bins[m][i])
+                    h = h.T
+                    extent = (xe[0], xe[-1], ye[0], ye[-1])
+                    if smooth not in (False, None):
+                        h = gaussian_filter(h, (smooth[i],smooth[j]))
+                    levels = contour_levels(Xm[j], Xm[i], bins=bins[m][i],
+                                            levels=clevels)
                 if background == 'points':
                     if not (cmap is None or bweight is None):
                         ax.scatter(Xm[j], Xm[i], c=bweight, marker='.',
@@ -497,6 +515,73 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
         pylab.savefig(output, format=output[-3:])
         pylab.close()
     return fig, axes_diagonal, axes_off
+
+def phase_space(R, v, sigma_v=0, hist_bins=10, ylim=None,
+                vertlines=None, xlabel=r'$R\,({\rm Mpc})$',
+                ylabel=r'$v_{\rm gal}\,(\mathrm{km\,s^{-1}})$'):
+    """
+    Plot the phase space (distance vs. velocity) of galaxies. Used mostly for
+    galaxy cluster membership diagnostics.
+
+    Parameters
+    ----------
+        R       : array of floats
+                  cluster-centric distances
+        v       : array of floats
+                  peculiar velocities
+        sigma_v : float (optional)
+                  cluster velocity dispersion
+        hist_bins : int or list (optional)
+                  bins or number of bins for the velocity histogram
+        ylim    : tuple of floats, length 2 (optional)
+                  y-axis limits
+        vertlines : (list of) floats or (list of) length-2 tuples with
+                            each element containing (loc, linestyle)
+                  locations at which to plot vertical lines, for instance
+                  to mark r200 or other characteristic radii
+                  NOTE: maybe also add color and linewidth to the input later
+
+    """
+    fig = pylab.figure(figsize=(7,4))
+    ax = pylab.subplot2grid((1,4), (0,0), colspan=3)
+    ax.plot(R, v, 'k.')
+    ax.axhline(0, ls='-', color='k', lw=1)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    xlim = ax.get_xlim()
+    ax.set_xlim(-0.1, xlim[1])
+    ax.axvline(0, ls='--', color='k', lw=1)
+    if vertlines is not None:
+        if not hasattr(vertlines, '__iter__'):
+            vertlines = [vertlines]
+        if hasattr(vertlines[0], '__iter__'):
+            for vl in vertlines:
+                ax.axvline(vl[0], ls=vl[1], color='k', lw=1)
+        else:
+            for vl in vertlines:
+                ax.axvline(vl[0], ls=':', color='k', lw=1)
+    if ylim is None:
+        ylim = ax.get_ylim()
+    else:
+        ax.set_ylim(*ylim)
+    ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('$%s$'))
+    ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('$%d$'))
+    right = pylab.subplot2grid((1,4), (0,3))
+    n, edges, patches = right.hist(v, hist_bins, orientation='horizontal',
+                                   histtype='stepfilled', color='y')
+    if sigma_v > 0:
+        n_area = (n * (edges[1:] - edges[:-1])).sum()
+        t = numpy.linspace(ylim[0], ylim[1], 101)
+        x = (t[1:] + t[:-1]) / 2
+        f = numpy.exp(-x**2/(2*sigma_v**2)) / ((2*numpy.pi)**2*sigma_v)
+        f_area = (f * (t[1:] - t[:-1])).sum()
+        right.plot(f/f_area*n_area, x, '-', color=(1,0,0))
+    right.xaxis.set_major_locator(ticker.MaxNLocator(3))
+    right.xaxis.set_major_formatter(ticker.FormatStrFormatter('$%d$'))
+    right.set_yticklabels([])
+    right.set_xlabel(r'$N(v_{\rm gal})$')
+    fig.tight_layout(pad=0.2)
+    return fig, [ax, right]
 
 def wcslabels(wcs, xlim, ylim, xsep='00:00:01', ysep='00:00:15'):
     """
