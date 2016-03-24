@@ -7,6 +7,7 @@ from matplotlib import ticker
 from scipy import optimize
 from scipy.ndimage import zoom
 
+
 def contour_levels(x, y=[], bins=10, levels=(0.68,0.95)):
     """
     Get the contour levels corresponding to a set of percentiles (given as
@@ -53,6 +54,7 @@ def contour_levels(x, y=[], bins=10, levels=(0.68,0.95)):
                                     args=(hist,l)) for l in levels]
     return level_values
 
+
 def contours_external(ax, imgwcs, contourfile, levels, colors, lw=1):
     """
     Draw contours from contourfile in the frame of imgwcs.
@@ -73,6 +75,7 @@ def contours_external(ax, imgwcs, contourfile, levels, colors, lw=1):
                extent=(xo,x1,yo,y1))
     return
 
+
 def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
            clevels=(0.68,0.95), contour_reference='samples',
            truths=None, truths_in_1d=False, truth_color='r',
@@ -80,8 +83,8 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
            ls1d='-', ls2d='solid', style1d='curve', medians1d=True,
            percentiles1d=True, background=None, bweight=None, bcolor='r',
            alpha=0.5, limits=None, show_likelihood_1d=False,
-           ticks=None, show_contour=True, top_labels=False, output='',
-           verbose=False, **kwargs):
+           ticks=None, show_contour=True, top_labels=False,
+           pad=1, h_pad=0, w_pad=0, output='', verbose=False, **kwargs):
     """
     Do a corner plot (e.g., with the posterior parameters of an MCMC chain).
     Note that there may still be some issues with the tick labels.
@@ -184,6 +187,12 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
       top_labels : boolean (default False)
                   whether to show axis and tick labels at the top of each
                   diagonal plot
+      pad       : float
+                  blank space outside axes (passed to tight_layout)
+      h_pad     : float
+                  vertical space between axes (passed to tight_layout)
+      w_pad     : float
+                  horizontal space between axes (passed to tight_layout)
       output    : string (optional)
                   filename to save the plot.
       verbose   : boolean
@@ -310,12 +319,6 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             print msg
             exit()
     bins, bins1d = meta_bins
-    # figure size
-    if ndim > 4:
-        figsize = 2 * ndim
-    else:
-        figsize= 3 * ndim
-    axsize = 0.85 / ndim
     if len(X) == 1:
         if isinstance(colors, basestring):
             color1d = colors
@@ -334,16 +337,25 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
         ls2d = [ls2d for i in X]
     # all set!
     axvls = ('--', ':', '-.')
-    fig = pylab.figure(figsize=(figsize,figsize))
+    # figure size
+    #if ndim > 4:
+        #figsize = 2 * ndim
+    #else:
+        #figsize= 3 * ndim
+    #axsize = 0.85 / ndim
+    #fig = pylab.figure(figsize=(figsize,figsize))
+    fig, axes = pylab.subplots(figsize=(2*ndim+1,2*ndim+1), ncols=ndim,
+                               nrows=ndim)
     # diagonals first
     plot_ranges = []
     axes_diagonal = []
     # for backward compatibility
     histtype = style1d.replace('hist', 'step')
     for i in xrange(ndim):
-        ax = pylab.axes([0.1+axsize*i, 0.95-axsize*(i+1),
-                         0.95*axsize, 0.95*axsize],
-                        yticks=[])
+        #ax = pylab.axes([0.1+axsize*i, 0.95-axsize*(i+1),
+                         #0.95*axsize, 0.95*axsize],
+                        #yticks=[])
+        ax = axes[i][i]
         axes_diagonal.append(ax)
         if i < ndim-1:
             ax.set_xticklabels([])
@@ -408,16 +420,17 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
         if i == ndim-1 and labels is not None:
             if len(labels) >= ndim:
                 ax.set_xlabel(labels[i])
+        ax.set_yticks([])
         # to avoid overcrowding tick labels
         if ticks is None:
-            tickloc = pylab.MaxNLocator(4)
+            tickloc = pylab.MaxNLocator(3)
             ax.xaxis.set_major_locator(tickloc)
         else:
             ax.set_xticks(ticks[i])
         pylab.xticks(rotation=45)
         if limits is not None:
             ax.set_xlim(*limits[i])
-        pylab.ylim(0, 1.1*peak)
+        ax.set_ylim(0, 1.1*peak)
         if i != ndim-1:
             ax.set_xticklabels([])
         if top_labels:
@@ -426,12 +439,20 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             topax.xaxis.set_major_locator(tickloc)
             topax.set_xlabel(labels[i])
         plot_ranges.append(ax.get_xlim())
+
     # lower off-diagonals
     axes_off = []
-    for i in xrange(1, ndim): # vertical axes
-        for j in xrange(i): # horizontal axes
-            ax = pylab.axes([0.1+axsize*j, 0.95-axsize*(i+1),
-                             0.95*axsize, 0.95*axsize])
+    # vertical axes
+    for i in xrange(1, ndim):
+        # blank axes
+        axes[0][i].axis('off')
+        for j in xrange(i+1, ndim):
+            axes[i][j].axis('off')
+        # horizontal axes
+        for j in xrange(i):
+            #ax = pylab.axes([0.1+axsize*j, 0.95-axsize*(i+1),
+                             #0.95*axsize, 0.95*axsize])
+            ax = axes[i][j]
             axes_off.append(ax)
             extent = append(plot_ranges[j], plot_ranges[i])
             for m, Xm in enumerate(X):
@@ -496,11 +517,11 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                 ax.set_yticks(ticks[i])
             else:
                 # to avoid overcrowding tick labels
-                xloc = pylab.MaxNLocator(4)
-                ax.xaxis.set_major_locator(xloc)
-                yloc = pylab.MaxNLocator(4)
-                ax.yaxis.set_major_locator(yloc)
-            pylab.xticks(rotation=45)
+                ax.xaxis.set_major_locator(pylab.MaxNLocator(3))
+                ax.yaxis.set_major_locator(pylab.MaxNLocator(3))
+            #pylab.xticks(rotation=45)
+            for tick in ax.get_xticklabels():
+                tick.set_rotation(45)
     # dummy legend axes
     if len(X) > 1 and len(names) == len(X):
         lax = pylab.axes([0.1+axsize*(ndim-1), 0.95,
@@ -511,10 +532,12 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             pylab.plot([], [], ls='-', lw=2, color=c, label=model)
         lg = pylab.legend(loc='center', ncol=1)
         lg.get_frame().set_alpha(0)
+    fig.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
     if output:
         pylab.savefig(output, format=output[-3:])
         pylab.close()
     return fig, axes_diagonal, axes_off
+
 
 def phase_space(R, v, sigma_v=0, hist_bins=10, ylim=None,
                 vertlines=None, xlabel=r'$R\,({\rm Mpc})$',
@@ -582,6 +605,7 @@ def phase_space(R, v, sigma_v=0, hist_bins=10, ylim=None,
     right.set_xlabel(r'$N(v_{\rm gal})$')
     fig.tight_layout(pad=0.2)
     return fig, [ax, right]
+
 
 def wcslabels(wcs, xlim, ylim, xsep='00:00:01', ysep='00:00:15'):
     """
@@ -677,6 +701,7 @@ def wcslabels(wcs, xlim, ylim, xsep='00:00:01', ysep='00:00:15'):
     xticks = [wcs.wcs2pix(i, min(declim))[0] for i in x]
     yticks = [wcs.wcs2pix(max(ralim), i)[1] for i in y]
     return [xticks, xticklabels], [yticks, yticklabels]
+
 
 def _load_corner_config(config):
     """
