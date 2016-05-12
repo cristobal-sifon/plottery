@@ -646,6 +646,31 @@ def wcslabels(wcs, xlim, ylim, xsep='00:00:01', ysep='00:00:15',
                   labels for declination dms labels
 
     """
+    def format_wcs(x):
+        """
+        replace the 60's for 0's and change other values consistently,
+        and add 0's at the beginning of single-digit values
+        """
+        x = x.split(':')
+        x[2] = round(float(x[2]), 0)
+        x[2] = '{0:.0f}'.format(x[2]) if x[2] >= 10 \
+                else '0{0:.0f}'.format(x[2])
+        for i in (1, 0):
+            if x[i+1] == '60':
+                if x[0][0] == '-':
+                    if i == 0:
+                        x[i] = '-{0}'.format(str(int(x[i]) - 1))
+                    else:
+                        x[i] = str(int(x[i]) - 1)
+                else:
+                    x[i] = str(int(x[i]) + 1)
+                x[i+1] = '00'
+        for i in xrange(len(x)):
+            if 0 <= int(x[i]) < 10:
+                x[i] = '0{:.0f}'.format(int(x[i]))
+            elif -10 < int(x[i]) < 0:
+                x[i] = '-0{:.0f}'.format(-int(x[i]))
+        return ':'.join(x)
     left, right = xlim
     bottom, top = ylim
     wcslim = [wcs.pix2wcs(left, bottom), wcs.pix2wcs(right, top)]
@@ -661,20 +686,11 @@ def wcslabels(wcs, xlim, ylim, xsep='00:00:01', ysep='00:00:15',
     xticks = [wcs.wcs2pix(x, declim[0])[0] for x in raticks]
     yticks = [wcs.wcs2pix(ralim[0], y)[0] for y in decticks]
     xticklabels = [astCoords.decimal2hms(t, ':') for t in raticks]
-    yticklabels = [astCoords.decimal2dms(t, ':') for t in decticks]
-    # round the labels to integer seconds
-    for i in xrange(len(xticklabels)):
-        xt = xticklabels[i].split(':')
-        xt[2] = round(float(xt[2]), 0)
-        xt[2] = '{0:.0f}'.format(xt[2]) if xt[2] >= 10 \
-                else '0{0:.0f}'.format(xt[2])
-        xticklabels[i] = ':'.join(xt)
-    for i in xrange(len(yticklabels)):
-        yt = yticklabels[i].split(':')
-        yt[2] = round(float(yt[2]), 0)
-        yt[2] = '{0:.0f}'.format(yt[2]) if yt[2] >= 10 \
-                else '0{0:.0f}'.format(yt[2])
-        yticklabels[i] = ':'.join(yt)
+    yticklabels = [astCoords.decimal2dms(t, ':').replace('+', '')
+                   for t in decticks]
+    # format properly (remove 60's and add 0's)
+    xticklabels = [format_wcs(xt) for xt in xticklabels]
+    yticklabels = [format_wcs(yt) for yt in yticklabels]
     # get tick positions for rounded labels
     raticks = [astCoords.hms2decimal(xt, ':') for xt in xticklabels]
     decticks = [astCoords.dms2decimal(yt, ':') for yt in yticklabels]
