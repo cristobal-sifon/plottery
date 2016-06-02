@@ -351,6 +351,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     axes_diagonal = []
     # for backward compatibility
     histtype = style1d.replace('hist', 'step')
+    print percentiles1d
     for i in xrange(ndim):
         #ax = pylab.axes([0.1+axsize*i, 0.95-axsize*(i+1),
                          #0.95*axsize, 0.95*axsize],
@@ -487,7 +488,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                     except TypeError:
                         pass
                     for l in xrange(len(levels), 0, -1):
-                        if len(bcolor[l-1]) == 3:
+                        if not hasattr(bcolor[l-1][0], '__iter__'):
                             bcolor[l-1] = [bcolor[l-1]]
                         ax.contourf(h, (lvs[l-1],lvs[l]),
                                     extent=extent, colors=bcolor[l-1])
