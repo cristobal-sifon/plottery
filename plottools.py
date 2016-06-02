@@ -608,7 +608,8 @@ def phase_space(R, v, sigma_v=0, hist_bins=10, ylim=None,
     return fig, [ax, right]
 
 
-def wcslabels(wcs, xlim, ylim, xsep='00:00:01', ysep='00:00:15'):
+def wcslabels(wcs, xlim, ylim, xsep='00:00:01', ysep='00:00:15',
+              ax=None, label_color='k', rotate_x=0, rotate_y=90):
     """
     Get WCS ticklabels
 
@@ -626,81 +627,82 @@ def wcslabels(wcs, xlim, ylim, xsep='00:00:01', ysep='00:00:15'):
         xsep    : string
                   separation of declination ticks in the y axis, in
                   colon-separated dms format
+        ax      : matplotlib.Axes instance (optional)
+                  if provided, the ticks will be displayed on it
+        label_color : string or matplotlib color
+                  color with which the tick labels will be displayed,
+                  if ax is provided
+        rotate_x : float
+                  by how much to rotate the x tick labels if ax is
+                  provided
+        rotate_y : float
+                  by how much to rotate the y tick labels if ax is
+                  provided
 
     Returns
     -------
-        [xticks, xticklabels] : lists containing the positions and labels
-                  for right ascension hms labels
-        [yticks, yticklabels] : lists containing the positions and labels
-                  for declination dms labels
+        [xticks, xticklabels] : lists containing the positions and
+                  labels for right ascension hms labels
+        [yticks, yticklabels] : lists containing the positions and
+                  labels for declination dms labels
 
     """
-    def roundout(label):
-        if label[2] > 59:
-            label[1] += 1
-            label[2] -= 60
-        if label[1] > 59:
-            label[0] += 1
-            label[1] -= 60
-        return label
+    def format_wcs(x):
+        """
+        replace the 60's for 0's and change other values consistently,
+        and add 0's at the beginning of single-digit values
+        """
+        x = x.split(':')
+        x[2] = round(float(x[2]), 0)
+        x[2] = '{0:.0f}'.format(x[2]) if x[2] >= 10 \
+                else '0{0:.0f}'.format(x[2])
+        for i in (1, 0):
+            if x[i+1] == '60':
+                if x[0][0] == '-':
+                    if i == 0:
+                        x[i] = '-{0}'.format(str(int(x[i]) - 1))
+                    else:
+                        x[i] = str(int(x[i]) - 1)
+                else:
+                    x[i] = str(int(x[i]) + 1)
+                x[i+1] = '00'
+        for i in xrange(len(x)):
+            if 0 <= int(x[i]) < 10:
+                x[i] = '0{:.0f}'.format(int(x[i]))
+            elif -10 < int(x[i]) < 0:
+                x[i] = '-0{:.0f}'.format(-int(x[i]))
+        return ':'.join(x)
     left, right = xlim
     bottom, top = ylim
     wcslim = [wcs.pix2wcs(left, bottom), wcs.pix2wcs(right, top)]
     ralim, declim = numpy.transpose(wcslim)
-    hmslim = [astCoords.decimal2hms(x, ':') for x in ralim]
-    dmslim = [astCoords.decimal2dms(y, ':') for y in declim]
-    if dmslim[0][0] == '-':
-        sgn = -1
-    else:
-        sgn = 1
-    # assumes that East is left, as usual
-    xsep = numpy.array(xsep.split(':'), dtype=int)
-    ysep = numpy.array(ysep.split(':'), dtype=int)
-    xseconds = [float(h.split(':')[2]) for h in hmslim[::-1]]
-    yseconds = [float(d.split(':')[2]) for d in dmslim]
-    xlim = []
-    ylim = []
-    for i in xrange(2):
-        xlim.append(hmslim[-i-1].split(':'))
-        xlim[i] = [int(xlim[i][0]), int(xlim[i][1]), float(xlim[i][2])]
-        ylim.append(dmslim[i].split(':'))
-        ylim[i] = [int(ylim[i][0]), int(ylim[i][1]), float(ylim[i][2])]
-    if dmslim[0][0] == '-':
-        ylim = ylim[::-1]
-    xticklabels = [numpy.array([int(x) for x in xlim[0]])]
-    yticklabels = [numpy.array([int(y) for y in ylim[0]])]
-    for i in xrange(3):
-        if xsep[i] != 0:
-            while xticklabels[0][i] % xsep[i] != 0:
-                xticklabels[0][i] += 1
-        if ysep[i] != 0:
-            while yticklabels[0][i] % ysep[i] != 0:
-                yticklabels[0][i] += 1
-    xticklabels[0] = roundout(xticklabels[0])
-    yticklabels[0] = roundout(yticklabels[0])
-    while numpy.any(xticklabels[-1] + xsep < xlim[1]):
-        xticklabels.append(xticklabels[-1] + xsep)
-        xticklabels[-1] = roundout(xticklabels[-1])
-    while numpy.any(yticklabels[-1] + ysep < ylim[1]):
-        yticklabels.append(yticklabels[-1] + ysep)
-        yticklabels[-1] = roundout(yticklabels[-1])
-    for i in xrange(len(xticklabels)):
-        xticklabels[i] = [('%2d' %x).replace(' ', '0')
-                          for x in xticklabels[i]]
-    for i in xrange(len(yticklabels)):
-        yticklabels[i] = [('%2d' %y).replace(' ', '0')
-                          for y in yticklabels[i]]
-        if -10 < ylim[0][0] < 0:
-            yticklabels[i][0] = '-0%d' %abs(int(yticklabels[i][0]))
-    xticklabels = [':'.join(x) for x in xticklabels]
-    yticklabels = [':'.join(y) for y in yticklabels]
-    if dmslim[0][0] == '-':
-        yticklabels = ['-{0}'.format(y) if y[0] != '-' else y
-                       for y in yticklabels]
-    x = [astCoords.hms2decimal(xtl, ':') for xtl in xticklabels]
-    y = [astCoords.dms2decimal(ytl, ':') for ytl in yticklabels]
-    xticks = [wcs.wcs2pix(i, min(declim))[0] for i in x]
-    yticks = [wcs.wcs2pix(max(ralim), i)[1] for i in y]
+    rasep = astCoords.hms2decimal(xsep, ':')
+    decsep = astCoords.dms2decimal(ysep, ':')
+    raticks = numpy.arange(0, max(ralim), rasep)
+    raticks = raticks[raticks > min(ralim)]
+    decticks = numpy.arange(-90, max(declim), decsep)
+    decticks = decticks[decticks > min(declim)]
+    # this assumes that the rotation angle of the image is 0/90/180/270
+    # degrees
+    xticks = [wcs.wcs2pix(x, declim[0])[0] for x in raticks]
+    yticks = [wcs.wcs2pix(ralim[0], y)[0] for y in decticks]
+    xticklabels = [astCoords.decimal2hms(t, ':') for t in raticks]
+    yticklabels = [astCoords.decimal2dms(t, ':').replace('+', '')
+                   for t in decticks]
+    # format properly (remove 60's and add 0's)
+    xticklabels = [format_wcs(xt) for xt in xticklabels]
+    yticklabels = [format_wcs(yt) for yt in yticklabels]
+    # get tick positions for rounded labels
+    raticks = [astCoords.hms2decimal(xt, ':') for xt in xticklabels]
+    decticks = [astCoords.dms2decimal(yt, ':') for yt in yticklabels]
+    xticks = [wcs.wcs2pix(x, declim[0])[0] for x in raticks]
+    yticks = [wcs.wcs2pix(ralim[0], y)[1] for y in decticks]
+    # display?
+    if ax:
+        ax.set_xticks(xticks)
+        ax.set_yticks(yticks)
+        ax.set_xticklabels(xticklabels, color=label_color, rotation=rotate_x)
+        ax.set_yticklabels(yticklabels, color=label_color, rotation=rotate_y)
     return [xticks, xticklabels], [yticks, yticklabels]
 
 
