@@ -217,6 +217,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     # the depth of an array or list. Useful to assess the proper format of
     # arguments. Returns zero if scalar.
     depth = lambda L: (hasattr(L, '__iter__') and max(map(depth,L))) or 0
+    print 'X =', X
     nchains = (len(X) if depth(X) > 1 else 1)
     if nchains > 1:
         ndim = len(X[0])
@@ -458,7 +459,8 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             extent = append(plot_ranges[j], plot_ranges[i])
             for m, Xm in enumerate(X):
                 if contour_reference == 'likelihood':
-                    ax.contour(Xm[j], Xm[i], likelihood, levels=clevels)
+                    ax.contour(Xm[j], Xm[i], likelihood, levels=clevels,
+                               linewidths=1)
                     continue
                 if contour_reference == 'samples':
                     h, xe, ye = histogram2d(Xm[j], Xm[i], bins=bins[m][i])
@@ -488,7 +490,8 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                     except TypeError:
                         pass
                     for l in xrange(len(levels), 0, -1):
-                        if not hasattr(bcolor[l-1][0], '__iter__'):
+                        if isinstance(bcolor[l-1][0], float) and \
+                                not hasattr(bcolor[l-1][0], '__iter__'):
                             bcolor[l-1] = [bcolor[l-1]]
                         ax.contourf(h, (lvs[l-1],lvs[l]),
                                     extent=extent, colors=bcolor[l-1])
