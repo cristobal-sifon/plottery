@@ -217,7 +217,6 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     # the depth of an array or list. Useful to assess the proper format of
     # arguments. Returns zero if scalar.
     depth = lambda L: (hasattr(L, '__iter__') and max(map(depth,L))) or 0
-    print 'X =', X
     nchains = (len(X) if depth(X) > 1 else 1)
     if nchains > 1:
         ndim = len(X[0])
