@@ -351,7 +351,6 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     axes_diagonal = []
     # for backward compatibility
     histtype = style1d.replace('hist', 'step')
-    print percentiles1d
     for i in xrange(ndim):
         #ax = pylab.axes([0.1+axsize*i, 0.95-axsize*(i+1),
                          #0.95*axsize, 0.95*axsize],
@@ -386,10 +385,10 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                 if labels is not None:
                     print '  %s' %(labels[i]),
                     if truths is None:
-                        print ''
+                        print
                     else:
-                        print '({0})'.format(truths[i])
-                    print ' ', median(Xm[i])
+                        print '(truth: {0})'.format(truths[i])
+                    print '    p50.0  {1:.3f}'.format(median(Xm[i]))
             for p, ls in izip(clevels, axvls):
                 v = [percentile(Xm[i], 100*(1-p)/2.),
                      percentile(Xm[i], 100*(1+p)/2.)]
@@ -397,7 +396,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                     ax.axvline(v[0], ls=ls, color=color1d[m])
                     ax.axvline(v[1], ls=ls, color=color1d[m])
                 if verbose:
-                    print '    p%.1f  %.2f  %.2f' %(100*p, v[0], v[1])
+                    print '    p%.1f  %.3f  %.3f' %(100*p, v[0], v[1])
         if likelihood is not None:
             for m, Xm, Lm, e in izip(count(), X, likelihood, edges):
                 #print Lm.min(), Lm.max()
