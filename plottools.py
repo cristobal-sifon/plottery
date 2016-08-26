@@ -388,7 +388,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                         print
                     else:
                         print '(truth: {0})'.format(truths[i])
-                    print '    p50.0  {1:.3f}'.format(median(Xm[i]))
+                    print '    p50.0  {0:.3f}'.format(median(Xm[i]))
             for p, ls in izip(clevels, axvls):
                 v = [percentile(Xm[i], 100*(1-p)/2.),
                      percentile(Xm[i], 100*(1+p)/2.)]
