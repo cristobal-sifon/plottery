@@ -79,7 +79,8 @@ def contours_external(ax, imgwcs, contourfile, levels, colors, lw=1):
 def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
            clevels=(0.68,0.95), contour_reference='samples',
            truths=None, truths_in_1d=False, truth_color='r',
-           smooth=False, likelihood=None, likesmooth=1, colors='k', cmap=None,
+           smooth=False, likelihood=None, likesmooth=1,
+           color_likelihood='r', colors='k', cmap=None,
            ls1d='-', ls2d='solid', style1d='curve', medians1d=True,
            percentiles1d=True, background=None, bweight=None, bcolor='r',
            alpha=0.5, limits=None, show_likelihood_1d=False,
@@ -227,6 +228,8 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
         ndim = len(X)
         nsamples = len(X[0])
         X = (X,)
+        if likelihood is not None:
+            likelihood = (likelihood,)
     if nsamples == 0:
         msg = 'plottools.corner: received empty array.'
         msg += ' It is possible that you set the burn-in to be longer'
@@ -413,7 +416,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                 Lmbinned -= Lmbinned.min()
                 Lmbinned /= Lmbinned.sum() / area
                 ax.plot(xo[valid], Lmbinned, '-',
-                        color=truth_color, lw=3, zorder=-10)
+                        color=color_likelihood, lw=1, zorder=-10)
         if truths_in_1d and truths is not None:
             ax.axvline(truths[i], ls='-', color=truth_color,
                        zorder=10)
