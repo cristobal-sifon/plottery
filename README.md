@@ -27,8 +27,15 @@ There are other, less used and less broad functions as well -- see the release p
 
     help(plottools)
 
+---
+
+### To-do list
+This is a wish list for updates to the code. Feel free to make suggestions.
+
+  * `corner()`:
+    * use different `bcolors` for different models
 
 ---
-*Last updated: 2016-Sep-05*
+*Last updated: 2016-Oct-25*
 
-*(c) Cristobal Sifon (Leiden)*
+*(c) Cristóbal Sifón (Princeton)*
