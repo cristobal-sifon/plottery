@@ -8,6 +8,9 @@ from scipy import optimize
 from scipy.ndimage import zoom
 
 
+__version__ = '0.1.0'
+
+
 def contour_levels(x, y=[], bins=10, levels=(0.68,0.95)):
     """
     Get the contour levels corresponding to a set of percentiles (given as
@@ -84,7 +87,8 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
            percentiles1d=True, background=None, bweight=None, bcolor='r',
            alpha=0.5, limits=None, show_likelihood_1d=False,
            ticks=None, show_contour=True, top_labels=False,
-           pad=1, h_pad=0, w_pad=0, output='', verbose=False, **kwargs):
+           pad=1, h_pad=0, w_pad=0, output='', verbose=False,
+           names_kwargs={}, **kwargs):
     """
     Do a corner plot (e.g., with the posterior parameters of an MCMC chain).
     Note that there may still be some issues with the tick labels.
@@ -197,6 +201,10 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                   filename to save the plot.
       verbose   : boolean
                   whether to print the marginalized values per variable
+      names_kwargs : dictionary (optional)
+                  keyword arguments controlling the location and style
+                  of the legend containing model names; passed to
+                  pylab.legend()
       kwargs    : keyword arguments to be passed to pylab.contour()
 
 
@@ -216,7 +224,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     options = _load_corner_config(config)
     # the depth of an array or list. Useful to assess the proper format of
     # arguments. Returns zero if scalar.
-    depth = lambda L: (hasattr(L, '__iter__') and max(map(depth,L))) or 0
+    depth = lambda L: len(numpy.array(L).shape)
     nchains = (len(X) if depth(X) > 1 else 1)
     if nchains > 1:
         ndim = len(X[0])
@@ -248,13 +256,13 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     if likelihood is not None and show_likelihood_1d:
         msg = 'WARNING: likelihood format not right - ignoring'
         lshape = likelihood.shape
-
         if len(lshape) == 1:
             likelihood = [likelihood]
         if lshape[0] != nchains or lshape[1] != nsamples \
             or len(lshape) != 2:
             print msg
             likelihood = None
+
     # check clevels - they should be fractions between 0 and 1 for
     # contour_reference == 'samples'.
     #if contour_reference != 'samples':
@@ -279,7 +287,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             truths = None
     try:
         if len(smooth) != len(X[0]):
-            print 'WARNING: number smoothing widths must be equal to',
+            print 'WARNING: number of smoothing widths must be equal to',
             print 'number of parameters'
             smooth = [0 for i in X[0]]
     except TypeError:
@@ -288,12 +296,8 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     # check the binning scheme.
     meta_bins = [bins, bins1d]
     for i, bname in enumerate(('bins','bins1d')):
-        bi = meta_bins[i]
-        # will fail if bi is a scalar
-        try:
-            bidepth = depth(bi)
-        except TypeError:
-            bidepth = 0
+        bi = array(meta_bins[i])
+        bidepth = depth(bi)
         # will be the same message in all cases below
         msg = 'ERROR: number of {0} must equal either number'.format(bname)
         msg += ' of chains or number of parameters, or have shape'
@@ -302,7 +306,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
         ones = numpy.ones((nchains,ndim))
         # is it a scalar?
         if bidepth == 0:
-            meta_bins[i] = bi * ones
+            meta_bins[i] = bi.T * ones
         # or a 1d list?
         elif bidepth == 1:
             bi = numpy.array(bi)
@@ -318,6 +322,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
              bidepth > 2:
             print msg
             exit()
+    # adjusted to the required shape
     bins, bins1d = meta_bins
     if len(X) == 1:
         if isinstance(colors, basestring):
@@ -335,30 +340,29 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
         ls1d = [ls1d for i in X]
     if isinstance(ls2d, basestring):
         ls2d = [ls2d for i in X]
+    # to move the model legend around
+    names_kwargs_defaults = {'loc': 'upper right',
+                             'frameon': False,
+                             'bbox_to_anchor': (0.95,0.95),
+                             'bbox_transform': pylab.gcf().transFigure}
+    for key in names_kwargs_defaults:
+        if key not in names_kwargs:
+            names_kwargs[key] = names_kwargs_defaults[key]
     # all set!
     axvls = ('--', ':', '-.')
-    # figure size
-    #if ndim > 4:
-        #figsize = 2 * ndim
-    #else:
-        #figsize= 3 * ndim
-    #axsize = 0.85 / ndim
-    #fig = pylab.figure(figsize=(figsize,figsize))
     fig, axes = pylab.subplots(figsize=(2*ndim+1,2*ndim+1), ncols=ndim,
                                nrows=ndim)
     # diagonals first
     plot_ranges = []
     axes_diagonal = []
+    # to generate model legend
+    model_lines = []
     # for backward compatibility
     histtype = style1d.replace('hist', 'step')
+    print 'limits =', limits
     for i in xrange(ndim):
-        #ax = pylab.axes([0.1+axsize*i, 0.95-axsize*(i+1),
-                         #0.95*axsize, 0.95*axsize],
-                        #yticks=[])
         ax = axes[i][i]
         axes_diagonal.append(ax)
-        if i < ndim-1:
-            ax.set_xticklabels([])
         peak = 0
         edges = []
         for m, Xm in enumerate(X):
@@ -368,7 +372,9 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                 xo = 0.5 * (e[1:] + e[:-1])
                 xn = linspace(xo.min(), xo.max(), 500)
                 n = interpolate.spline(xo, ho, xn)
-                ax.plot(xn, n, ls=ls1d[m], color=color1d[m])
+                line, = ax.plot(xn, n, ls=ls1d[m], color=color1d[m])
+                if i == 0:
+                    model_lines.append(line)
             else:
                 n, e, patches = ax.hist(Xm[i], bins=bins1d[m][i],
                                         histtype=histtype,
@@ -399,7 +405,6 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                     print '    p%.1f  %.2f  %.2f' %(100*p, v[0], v[1])
         if likelihood is not None:
             for m, Xm, Lm, e in izip(count(), X, likelihood, edges):
-                #print Lm.min(), Lm.max()
                 binning = digitize(Xm[i], e[m])
                 xo = 0.5 * (e[m][1:] + e[m][:-1])
                 # there can be nan's because some bins have no data
@@ -407,7 +412,6 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                                for ii in xrange(1, len(e[m]))])
                 Lmbinned = [median(sort(Lm[binning == ii+1])[-likesmooth:])
                             for ii, L in enumerate(valid) if L]
-                #Lmbinned = array(Lmbinned) + 100
                 # normalized to the histogram area
                 Lmbinned = exp(Lmbinned)
                 Lmbinned -= Lmbinned.min()
@@ -450,8 +454,6 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             axes[i][j].axis('off')
         # horizontal axes
         for j in xrange(i):
-            #ax = pylab.axes([0.1+axsize*j, 0.95-axsize*(i+1),
-                             #0.95*axsize, 0.95*axsize])
             ax = axes[i][j]
             axes_off.append(ax)
             extent = append(plot_ranges[j], plot_ranges[i])
@@ -460,6 +462,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                     ax.contour(Xm[j], Xm[i], likelihood, levels=clevels)
                     continue
                 if contour_reference == 'samples':
+                    h = histogram2d(Xm[j], Xm[i], bins=bins[m][i])
                     h, xe, ye = histogram2d(Xm[j], Xm[i], bins=bins[m][i])
                     h = h.T
                     extent = (xe[0], xe[-1], ye[0], ye[-1])
@@ -478,9 +481,9 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                     ax.imshow([Xm[i], Xm[j]], cmap=cm.Reds,
                                extent=extent)
                 elif background == 'filled':
-                    clvs = append(clevels, 1)
                     lvs = contour_levels(Xm[j], Xm[i], bins=bins[m][i],
-                                         levels=clvs)
+                                         levels=clevels)
+                    lvs = append(lvs[::-1], h.max())
                     try:
                         if hasattr(bcolor[0], '__iter__'):
                             bcolor = [bc for bc in bcolor]
@@ -490,9 +493,11 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                         if len(bcolor[l-1]) == 3:
                             bcolor[l-1] = [bcolor[l-1]]
                         ax.contourf(h, (lvs[l-1],lvs[l]),
+                        #ax.contourf(h, (lvs[l],lvs[l-1]),
                                     extent=extent, colors=bcolor[l-1])
                 if show_contour:
-                    ax.contour(h, levels, colors=color1d[m],
+                    #ax.contour(h, levels, colors=color1d[m],
+                    ax.contour(h, levels[::-1], colors=color1d[m],
                                linestyles=ls2d[m], extent=extent,
                                zorder=10, **kwargs)
                 if truths is not None:
@@ -522,16 +527,9 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             #pylab.xticks(rotation=45)
             for tick in ax.get_xticklabels():
                 tick.set_rotation(45)
-    # dummy legend axes
-    if len(X) > 1 and len(names) == len(X):
-        lax = pylab.axes([0.1+axsize*(ndim-1), 0.95,
-                          0.95*axsize, 0.95*axsize],
-                         xticks=[], yticks=[])
-        lax.set_frame_on(False)
-        for c, model in izip(color1d, names):
-            pylab.plot([], [], ls='-', lw=2, color=c, label=model)
-        lg = pylab.legend(loc='center', ncol=1)
-        lg.get_frame().set_alpha(0)
+    if (len(X) == 1 and isinstance(names, basestring)) or \
+            (hasattr(names, '__iter__') and len(names) == len(X)):
+        fig.legend(model_lines, names, **names_kwargs)
     fig.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
     if output:
         pylab.savefig(output, format=output[-3:])
