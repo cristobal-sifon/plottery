@@ -360,7 +360,6 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     model_lines = []
     # for backward compatibility
     histtype = style1d.replace('hist', 'step')
-    print 'limits =', limits
     for i in xrange(ndim):
         ax = axes[i][i]
         axes_diagonal.append(ax)
