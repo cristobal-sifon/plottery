@@ -8,7 +8,7 @@ from scipy import optimize
 from scipy.ndimage import zoom
 
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 
 def contour_levels(x, y=[], bins=10, levels=(0.68,0.95)):
