@@ -82,7 +82,8 @@ def contours_external(ax, imgwcs, contourfile, levels, colors, lw=1):
 def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
            clevels=(0.68,0.95), contour_reference='samples',
            truths=None, truths_in_1d=False, truth_color='r',
-           smooth=False, likelihood=None, likesmooth=1, colors='k', cmap=None,
+           smooth=False, likelihood=None, likesmooth=1,
+           color_likelihood='r', colors='k', cmap=None,
            ls1d='-', ls2d='solid', style1d='curve', medians1d=True,
            percentiles1d=True, background=None, bweight=None, bcolor='r',
            alpha=0.5, limits=None, show_likelihood_1d=False,
@@ -235,6 +236,8 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
         ndim = len(X)
         nsamples = len(X[0])
         X = (X,)
+        if likelihood is not None:
+            likelihood = (likelihood,)
     if nsamples == 0:
         msg = 'plottools.corner: received empty array.'
         msg += ' It is possible that you set the burn-in to be longer'
@@ -391,10 +394,10 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                 if labels is not None:
                     print '  %s' %(labels[i]),
                     if truths is None:
-                        print ''
+                        print
                     else:
-                        print '({0})'.format(truths[i])
-                    print ' ', median(Xm[i])
+                        print '(truth: {0})'.format(truths[i])
+                    print '    p50.0  {0:.3f}'.format(median(Xm[i]))
             for p, ls in izip(clevels, axvls):
                 v = [percentile(Xm[i], 100*(1-p)/2.),
                      percentile(Xm[i], 100*(1+p)/2.)]
@@ -402,7 +405,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                     ax.axvline(v[0], ls=ls, color=color1d[m])
                     ax.axvline(v[1], ls=ls, color=color1d[m])
                 if verbose:
-                    print '    p%.1f  %.2f  %.2f' %(100*p, v[0], v[1])
+                    print '    p%.1f  %.3f  %.3f' %(100*p, v[0], v[1])
         if likelihood is not None:
             for m, Xm, Lm, e in izip(count(), X, likelihood, edges):
                 binning = digitize(Xm[i], e[m])
@@ -417,7 +420,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                 Lmbinned -= Lmbinned.min()
                 Lmbinned /= Lmbinned.sum() / area
                 ax.plot(xo[valid], Lmbinned, '-',
-                        color=truth_color, lw=3, zorder=-10)
+                        color=color_likelihood, lw=1, zorder=-10)
         if truths_in_1d and truths is not None:
             ax.axvline(truths[i], ls='-', color=truth_color,
                        zorder=10)
@@ -459,7 +462,8 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             extent = append(plot_ranges[j], plot_ranges[i])
             for m, Xm in enumerate(X):
                 if contour_reference == 'likelihood':
-                    ax.contour(Xm[j], Xm[i], likelihood, levels=clevels)
+                    ax.contour(Xm[j], Xm[i], likelihood, levels=clevels,
+                               linewidths=1)
                     continue
                 if contour_reference == 'samples':
                     h = histogram2d(Xm[j], Xm[i], bins=bins[m][i])
@@ -490,13 +494,13 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                     except TypeError:
                         pass
                     for l in xrange(len(levels), 0, -1):
-                        if len(bcolor[l-1]) == 3:
+                        if isinstance(bcolor[l-1][0], float) and \
+                                not hasattr(bcolor[l-1][0], '__iter__'):
                             bcolor[l-1] = [bcolor[l-1]]
                         ax.contourf(h, (lvs[l-1],lvs[l]),
                         #ax.contourf(h, (lvs[l],lvs[l-1]),
                                     extent=extent, colors=bcolor[l-1])
                 if show_contour:
-                    #ax.contour(h, levels, colors=color1d[m],
                     ax.contour(h, levels[::-1], colors=color1d[m],
                                linestyles=ls2d[m], extent=extent,
                                zorder=10, **kwargs)
@@ -524,7 +528,6 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                 # to avoid overcrowding tick labels
                 ax.xaxis.set_major_locator(pylab.MaxNLocator(3))
                 ax.yaxis.set_major_locator(pylab.MaxNLocator(3))
-            #pylab.xticks(rotation=45)
             for tick in ax.get_xticklabels():
                 tick.set_rotation(45)
     if (len(X) == 1 and isinstance(names, basestring)) or \
@@ -731,3 +734,4 @@ def _load_corner_config(config):
             values = values[0]
         options[key] = values
     return options
+
