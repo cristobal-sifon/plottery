@@ -179,9 +179,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                   values to color-code background points
       bcolor    : color property, consistent with *background*
                   color of the points or filled contours, or colormap of the
-                  2d density background. If truths are given they will be
-                  shown in red and it is therefore recommended that the
-                  colors be on a blue scale.
+                  2d density background.
       alpha     : float between 0 and 1 (default 0.5)
                   transparency of the points if shown
       limits    : list of length-2 lists (optional)
