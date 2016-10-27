@@ -98,8 +98,9 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     ----------
       X         : array-like
                   all posterior parameters. Can also be the outputs of
-                  more than one chain, given as an array of arrays of models
-                  (e.g., X = [[A1, B1, C1], [A2, B2, C2]])
+                  more than one chain, given as an array of arrays of models.
+                  For instance, the example has three chains with two
+                  parameters. In this case, X = [[A1,B1], [A2,B2], [A3,B3]].
       config    : str (optional - NOT YET IMPLEMENTED)
                   name of file containing any parameters whose default values
                   should be modified. Format of the file is two columns,
