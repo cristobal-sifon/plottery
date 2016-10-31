@@ -101,6 +101,9 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                   more than one chain, given as an array of arrays of models.
                   For instance, the example has three chains with two
                   parameters. In this case, X = [[A1,B1], [A2,B2], [A3,B3]].
+
+    Optional parameters
+    -------------------
       config    : str (optional - NOT YET IMPLEMENTED)
                   name of file containing any parameters whose default values
                   should be modified. Format of the file is two columns,
@@ -116,64 +119,64 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                   would only modify these parameters. Note that because of the
                   content of the 'ticks' parameter, the chain must be a
                   three-parameter model.
-      names     : list of strings (optional)
+      names     : list of strings
                   Names for each of the chains. Will be used to show a legend
                   in the (empty) upper corner
-      labels    : list of strings (optional)
+      labels    : list of strings
                   names of the parameters
-      bins      : int or array of ints (default 20)
+      bins      : int or array of ints
                   Number of bins for the contours in the off-diagonal panels.
                   Should be one value per chain, one value per parameter,
                   or have shape (nchains,nparams)
-      bins1d    : int or array of ints (default 20)
+      bins1d    : int or array of ints
                   Number of bins for the histograms or curves in the diagonal
                   panels. Should be one value per chain, one value per
                   parameter, or have shape (nchains,nparams)
-      clevels   : list of floats between 0 and 1 (default: (0.68,0.95))
+      clevels   : list of floats between 0 and 1
                   percentiles at which to show contours
-      contour_reference : {'samples', 'chi2'} (default 'samples')
+      contour_reference : one of {'samples', 'chi2'}
                   whether to draw contour on fractions of samples or
                   on likelihood levels. In the former case, *clevels*
                   must be floats between 0 and 1; in the latter, the
-                  levels of the chi2. ONLY 'samples' IMPLEMENTED
-      truths    : {list of floats, 'medians', None} (default None)
+                  levels of the chi2. ONLY 'samples' IMPLEMENTED SO FAR
+      truths    : one of {list of floats, 'medians', None}
                   reference values for each parameter, to be shown in
                   each panel
-      smooth    : float (optional)
+      smooth    : float
                   the width of the gaussian with which to smooth the
                   contours in the off-diagonal panels. If no value is given,
                   the contours are not smoothed.
-      likelihood : array of floats (optional)
+      likelihood : array of floats
                   the likelihood surface, to be shown as a histogram in the
                   diagonals or to be used to define the 2d contours. If
                   contour_reference=='chi2' then provide the chi2 here
                   instead of the likelihood
-      show_likelihood_1d : bool (WILL I USE THIS ONE?)
+      show_likelihood_1d : bool
                   whether to show the likelihood in the diagonal panels
-      likesmooth : int (default 1000)
+      likesmooth : int
                   the number of maxima to average over to show the
                   likelihood surface
       colors    : any argument taken by the *colors* argument of
                   pylab.contour(), or a tuple of them if more than one
                   model is to be plotted
-      ls1d      : {'solid','dashed','dashdot','dotted'} (default 'solid')
+      ls1d      : one of {'solid','dashed','dashdot','dotted'}
                   linestyle for the diagonal plots, if style1d=='curve'.
                   Can specify more than one value as a list if more than one
                   model is being plotted.
-      ls2d      : {'solid','dashed','dashdot','dotted'} (default 'solid')
+      ls2d      : one of {'solid','dashed','dashdot','dotted'}
                   linestyle for the contours. Can specify more than one value
                   as a list if more than one model is being plotted.
-      style1d   : {'bar', 'step', 'stepfilled', 'curve'} (default 'curve')
+      style1d   : one of {'bar', 'step', 'stepfilled', 'curve'}
                   if 'curve', plot the 1d posterior as a curve; else this
                   parameter is passed to the 'histtype' argument in
                   pyplot.hist()
-      medians1d : bool (default True)
+      medians1d : bool
                   whether to show the medians in the diagonal panels as
                   vertical lines
-      percentiles1d : bool (default True)
+      percentiles1d : bool
                   whether to show selected percentiles (see *clevels*) in the
                   diagonal panels as vertical lines
-      background : {None, 'points', 'density', 'filled'} (default None)
+      background : one of {None, 'points', 'density', 'filled'}
                   If not None, then either points, a smoothed 2d histogram,
                   or filled contours are plotted beneath contours.
       bweight   : array-like, same length as e.g., A1
@@ -181,14 +184,14 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
       bcolor    : color property, consistent with *background*
                   color of the points or filled contours, or colormap of the
                   2d density background.
-      alpha     : float between 0 and 1 (default 0.5)
+      alpha     : float between 0 and 1
                   transparency of the points if shown
-      limits    : list of length-2 lists (optional)
+      limits    : list of length-2 lists
                   a list of plot limits for each of the parameters.
-      ticks     : list of lists (optional)
+      ticks     : list of lists
                   a list of tick positions for each parameter, to be printed
                   both in the x and y axes as appropriate.
-      top_labels : boolean (default False)
+      top_labels : bool
                   whether to show axis and tick labels at the top of each
                   diagonal plot
       pad       : float
@@ -197,14 +200,18 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                   vertical space between axes (passed to tight_layout)
       w_pad     : float
                   horizontal space between axes (passed to tight_layout)
-      output    : string (optional)
+      output    : string
                   filename to save the plot.
       verbose   : boolean
                   whether to print the marginalized values per variable
-      names_kwargs : dictionary (optional)
+      names_kwargs : dictionary
                   keyword arguments controlling the location and style
                   of the legend containing model names; passed to
-                  pylab.legend()
+                  pylab.legend(). The default settings are:
+                      * 'loc': 'upper right'
+                      * 'frameon': False
+                      * 'bbox_to_anchor': (0.95,0.95)
+                      * 'bbox_transform': pylab.gcf().transFigure
       kwargs    : keyword arguments to be passed to pylab.contour()
 
 
@@ -343,7 +350,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     if isinstance(ls2d, basestring):
         ls2d = [ls2d for i in X]
     # to move the model legend around
-    names_kwargs_defaults = {'loc': 'upper right',
+    names_kwargs_defaults = {'loc': 'center',
                              'frameon': False,
                              'bbox_to_anchor': (0.95,0.95),
                              'bbox_transform': pylab.gcf().transFigure}
