@@ -34,6 +34,7 @@ This is a wish list for updates to the code. Feel free to make suggestions.
 
   * `corner()`:
     * use different `bcolors` for different models
+    * implement different `truths` for different models
 
 ---
 *Last updated: 2016-Oct-25*
