@@ -8,7 +8,7 @@ from scipy import optimize
 from scipy.ndimage import zoom
 
 
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 
 
 def contour_levels(x, y=[], bins=10, levels=(0.68,0.95)):
@@ -611,6 +611,42 @@ def phase_space(R, v, sigma_v=0, hist_bins=10, ylim=None,
     right.set_xlabel(r'$N(v_{\rm gal})$')
     fig.tight_layout(pad=0.2)
     return fig, [ax, right]
+
+
+def savefig(output, fig=None, close=True, verbose=True, tight=True,
+            tight_kwargs={'pad': 0.4}):
+    """
+    Wrapper to save figures
+
+    Parameters
+    ----------
+        output  : str
+                  Output file name (including extension)
+
+    Optional parameters
+    -------------------
+        fig     : pyplot.figure object
+                  figure containing the plot.
+        close   : bool
+                  Whether to close the figure after saving.
+        verbose : bool
+                  Whether to print the output filename on screen
+        tight   : bool
+                  Whether to call `tight_layout()`
+        tight_kwargs : dict
+                  keyword arguments to be passed to `tight_layout()`
+
+    """
+    if fig is None:
+        fig = pylab
+    if tight:
+        fig.tight_layout(**tight_kwargs)
+    fig.savefig(output)
+    if close:
+        pylab.close()
+    if verbose:
+        print('Saved to {0}'.format(output))
+    return
 
 
 def wcslabels(wcs, xlim, ylim, xsep='00:00:01', ysep='00:00:15',
