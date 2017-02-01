@@ -3,12 +3,14 @@ import pylab
 from astLib import astCoords, astWCS
 from astropy.io import fits
 from itertools import count, izip
-from matplotlib import ticker
+from matplotlib import cm, colors as mplcolors, ticker
 from scipy import optimize
 from scipy.ndimage import zoom
 
+# in case matplotlib.__version__ < 1.5
+import colormaps
 
-__version__ = '0.1.2'
+__version__ = '0.1.3'
 
 
 def contour_levels(x, y=[], bins=10, levels=(0.68,0.95)):
@@ -543,6 +545,38 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
         pylab.savefig(output, format=output[-3:])
         pylab.close()
     return fig, axes_diagonal, axes_off
+
+
+def colorscale(array=None, vmin=0, vmax=1, n=0, cmap='viridis'):
+    """
+    Returns a set of colors and the associated colorscale, that can be
+    passed to `pylab.colorbar()`
+
+    Optional parameters
+    -------------------
+
+    """
+    if isinstance(cmap, basestring):
+        try:
+            cmap = getattr(cm, cmap)
+        except AttributeError:
+            cmap = getattr(colormaps, cmap)
+    elif type(cmap) != mplcolors.ListedColormap:
+        msg = 'argument cmap must be a string or' \
+              ' a matplotlib.colors.ListedColormap instance'
+        raise TypeError(msg)
+    # define normalization for colomap
+    cnorm = mplcolors.Normalize(vmin=vmin, vmax=vmax)
+    colorbar = cm.ScalarMappable(norm=cnorm, cmap=cmap)
+    # this is necessary for the colorbar to be interpreted by
+    # pylab.colorbar()
+    colorbar._A = []
+    # now get the colors
+    if array is None:
+        array = numpy.linspace(vmin, vmax, n)
+    colors = colorbar.to_rgba(array)
+    return colors, colorbar
+
 
 
 def phase_space(R, v, sigma_v=0, hist_bins=10, ylim=None,
