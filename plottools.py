@@ -554,6 +554,35 @@ def colorscale(array=None, vmin=0, vmax=1, n=0, cmap='viridis'):
 
     Optional parameters
     -------------------
+        array   : array-like of floats, shape (N,)
+                  values to which colors will be assigned
+        vmin    : float, 0 <= vmin < vmax
+                  minimum value for the color scale, on a scale from 0
+                  to 1.
+        vmax    : float, vmin < vmax <= 1
+                  maximum value for the color scale, on a scale from 0
+                  to 1.
+        n       : int
+                  number N of samples to draw in the range [vmin,vmax].
+                  Ignored if `array` is defined.
+        cmap    : str or `matplotlib.colors.ListedColormap` instance
+                  colormap to be used (or its name). New colormaps
+                  (viridis, inferno, plasma, magma) van be used with
+                  matplotlib<2.0 using the `colormaps` module included
+                  in this repository; in those cases the names must be
+                  given.
+
+    Returns
+    -------
+        ** If neither `array` nor `n` are defined **
+        colormap : `matplotlib.colors.ListedColormap` instance
+                  colormap, normalized to `vmin` and `vmax`.
+
+        ** If either `array` or `n` is defined **
+        colors  : array-like, shape (4,N)
+                  array of RGBA colors
+        colormap : `matplotlib.colors.ListedColormap` instance
+                  colormap, normalized to `vmin` and `vmax`.
 
     """
     if isinstance(cmap, basestring):
@@ -568,6 +597,8 @@ def colorscale(array=None, vmin=0, vmax=1, n=0, cmap='viridis'):
     # define normalization for colomap
     cnorm = mplcolors.Normalize(vmin=vmin, vmax=vmax)
     colorbar = cm.ScalarMappable(norm=cnorm, cmap=cmap)
+    if array is None and n == 0:
+        return colorbar
     # this is necessary for the colorbar to be interpreted by
     # pylab.colorbar()
     colorbar._A = []
