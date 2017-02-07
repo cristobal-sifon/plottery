@@ -3,14 +3,14 @@ import pylab
 from astLib import astCoords, astWCS
 from astropy.io import fits
 from itertools import count, izip
-from matplotlib import cm, colors as mplcolors, ticker
+from matplotlib import cm, colors as mplcolors, rcParams, ticker
 from scipy import optimize
 from scipy.ndimage import zoom
 
 # in case matplotlib.__version__ < 1.5
 import colormaps
 
-__version__ = '0.1.3'
+__version__ = '0.1.4'
 
 
 def contour_levels(x, y=[], bins=10, levels=(0.68,0.95)):
@@ -711,6 +711,41 @@ def savefig(output, fig=None, close=True, verbose=True, tight=True,
         pylab.close()
     if verbose:
         print('Saved to {0}'.format(output))
+    return
+
+
+def update_rcParams(dict={}):
+    """
+    Update matplotlib's rcParams with any desired values. By default,
+    this function sets lots of parameters to my personal preferences,
+    which basically involve larger font and thicker axes and ticks,
+    plus some tex configurations.
+
+    Returns the rcParams object.
+
+    """
+    default = {}
+    for tick in ('xtick', 'ytick'):
+        default['{0}.major.size'.format(tick)] = 8
+        default['{0}.minor.size'.format(tick)] = 4
+        default['{0}.major.width'.format(tick)] = 2
+        default['{0}.minor.width'.format(tick)] = 2
+        default['{0}.labelsize'.format(tick)] = 20
+    default['axes.linewidth'] = 2
+    default['axes.labelsize'] = 22
+    default['font.size'] = 22
+    default['legend.fontsize'] = 18
+    default['lines.linewidth'] = 2
+    default['mathtext.fontset'] = 'stix'
+    default['pdf.use14corefonts'] = True
+    default['text.usetex'] = True
+    default['text.latex.preamble']=[r'\usepackage{amsmath}']
+    for key in default:
+        rcParams[key] = default[key]
+    # if any parameters are specified, overwrite anything previously
+    # defined
+    for key in dict:
+        rcParams[key] = dict[key]
     return
 
 
