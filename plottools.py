@@ -2,6 +2,7 @@ import numpy
 import pylab
 from astLib import astCoords, astWCS
 from astropy.io import fits
+from cycler import cycler
 from itertools import count, izip
 from matplotlib import cm, colors as mplcolors, rcParams, ticker
 from scipy import optimize
@@ -740,6 +741,10 @@ def update_rcParams(dict={}):
     default['pdf.use14corefonts'] = True
     default['text.usetex'] = True
     default['text.latex.preamble']=[r'\usepackage{amsmath}']
+    # the matplotlib 2.x color cycle, for older versions
+    default['axes.prop_cycle'] = \
+        cycler(color=('#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
+                      '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'))
     for key in default:
         rcParams[key] = default[key]
     # if any parameters are specified, overwrite anything previously
