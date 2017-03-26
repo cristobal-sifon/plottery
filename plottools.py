@@ -5,7 +5,11 @@ import pylab
 from astLib import astCoords, astWCS
 from astropy.io import fits
 from cycler import cycler
-from itertools import count, izip
+from itertools import count
+try:
+    from itertools import izip
+except ImportError:
+    izip = zip
 from matplotlib import cm, colors as mplcolors, rcParams, ticker
 from scipy import optimize
 from scipy.ndimage import zoom
