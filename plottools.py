@@ -1,3 +1,5 @@
+from __future__ import division, print_function
+
 import numpy
 import pylab
 from astLib import astCoords, astWCS
@@ -11,7 +13,8 @@ from scipy.ndimage import zoom
 # in case matplotlib.__version__ < 1.5
 import colormaps
 
-__version__ = '0.1.4'
+
+__version__ = '0.2.0'
 
 
 def contour_levels(x, y=[], bins=10, levels=(0.68,0.95)):
@@ -255,14 +258,14 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     # check ticks
     if ticks is not None:
         if len(ticks) != ndim:
-            print 'WARNING: number of tick lists does not match',
-            print 'number of parameters'
+            print('WARNING: number of tick lists does not match' \
+                  ' number of parameters')
             ticks = None
     # check limits
     if limits is not None:
         if len(limits) != ndim:
-            print 'WARNING: number of limit lists does not match',
-            print 'number of parameters'
+            print('WARNING: number of limit lists does not match' \
+                  ' number of parameters')
             limits = None
     # check likelihood
     if likelihood is not None and show_likelihood_1d:
@@ -271,8 +274,8 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
         if len(lshape) == 1:
             likelihood = [likelihood]
         if lshape[0] != nchains or lshape[1] != nsamples \
-            or len(lshape) != 2:
-            print msg
+                or len(lshape) != 2:
+            print(msg)
             likelihood = None
 
     # check clevels - they should be fractions between 0 and 1 for
@@ -280,7 +283,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     #if contour_reference != 'samples':
         #msg = 'ERROR: only "samples" option implemented for'
         #msg += ' contour_reference. Setting contour_reference="samples"'
-        #print msg
+        #print(msg)
         #contour_reference = 'samples'
     if contour_reference == 'samples':
         if 1 < max(clevels) <= 100:
@@ -288,19 +291,19 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
         elif max(clevels) > 100:
             msg = 'ERROR: contour levels must be between 0 and 1 or between'
             msg += ' 0 and 100'
-            print msg
+            print(msg)
             exit()
     # check truths
     if truths is not None:
         if len(truths) != ndim:
             msg = 'WARNING: number of truth values does not match number'
             msg += ' of parameters'
-            print msg
+            print(msg)
             truths = None
     try:
         if len(smooth) != len(X[0]):
-            print 'WARNING: number of smoothing widths must be equal to',
-            print 'number of parameters'
+            print('WARNING: number of smoothing widths must be equal to' \
+                  ' number of parameters')
             smooth = [0 for i in X[0]]
     except TypeError:
         if smooth not in (False, None):
@@ -327,12 +330,12 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             elif len(bi) == nchains:
                 meta_bins[i] = ones * bi[:,numpy.newaxis]
             else:
-                print msg
+                print(msg)
                 exit()
         elif (bidepth == 2 and nchains > 1 and \
               numpy.array(bi).shape != ones.shape) or \
              bidepth > 2:
-            print msg
+            print(msg)
             exit()
     # adjusted to the required shape
     bins, bins1d = meta_bins
@@ -398,14 +401,14 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                 ax.axvline(median(Xm[i]), ls='-', color=color1d[m])
             if verbose:
                 if len(names) == len(X):
-                    print names[m]
+                    print('names[{0}] = {1}'.format(m, names[m]))
                 if labels is not None:
-                    print '  %s' %(labels[i]),
+                    print('  {0}'.format(labels[i]), end=' ')
                     if truths is None:
-                        print
+                        print('')
                     else:
-                        print '(truth: {0})'.format(truths[i])
-                    print '    p50.0  {0:.3f}'.format(median(Xm[i]))
+                        print('(truth: {0})'.format(truths[i]))
+                    print('    p50.0  {0:.3f}'.format(median(Xm[i])))
             for p, ls in izip(clevels, axvls):
                 v = [percentile(Xm[i], 100*(1-p)/2.),
                      percentile(Xm[i], 100*(1+p)/2.)]
@@ -413,7 +416,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                     ax.axvline(v[0], ls=ls, color=color1d[m])
                     ax.axvline(v[1], ls=ls, color=color1d[m])
                 if verbose:
-                    print '    p%.1f  %.3f  %.3f' %(100*p, v[0], v[1])
+                    print('    p%.1f  %.3f  %.3f' %(100*p, v[0], v[1]))
         if likelihood is not None:
             for m, Xm, Lm, e in izip(count(), X, likelihood, edges):
                 binning = digitize(Xm[i], e[m])
