@@ -242,7 +242,9 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     # the depth of an array or list. Useful to assess the proper format of
     # arguments. Returns zero if scalar.
     depth = lambda L: len(numpy.array(L).shape)
-    nchains = (len(X) if depth(X) > 1 else 1)
+    #nchains = (len(X)-1 if depth(X) > 1 else 1)
+    nchains = max(depth(X)-1, 1)
+    print(X.shape, depth(X), nchains)#, nchains2)
     if nchains > 1:
         ndim = len(X[0])
         nsamples = len(X[0][0])
@@ -747,7 +749,8 @@ def update_rcParams(dict={}):
     default['font.size'] = 22
     default['legend.fontsize'] = 18
     default['lines.linewidth'] = 2
-    default['mathtext.fontset'] = 'stix'
+    #default['mathtext.fontset'] = 'cm'
+    #default['mathtext.rm'] = 'serif'
     default['pdf.use14corefonts'] = True
     default['text.usetex'] = True
     default['text.latex.preamble']=[r'\usepackage{amsmath}']
