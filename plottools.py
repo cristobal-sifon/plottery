@@ -18,7 +18,7 @@ from scipy.ndimage import zoom
 import colormaps
 
 
-__version__ = '0.2.1'
+__version__ = '0.2.2'
 
 
 def contour_levels(x, y=[], bins=10, levels=(0.68,0.95)):
@@ -688,8 +688,8 @@ def phase_space(R, v, sigma_v=0, hist_bins=10, ylim=None,
     return fig, [ax, right]
 
 
-def savefig(output, fig=None, close=True, verbose=True, tight=True,
-            tight_kwargs={'pad': 0.4}):
+def savefig(output, fig=None, close=True, verbose=True, name='',
+            tight=True, tight_kwargs={'pad': 0.4}):
     """
     Wrapper to save figures
 
@@ -706,6 +706,9 @@ def savefig(output, fig=None, close=True, verbose=True, tight=True,
                   Whether to close the figure after saving.
         verbose : bool
                   Whether to print the output filename on screen
+        name    : str
+                  A name to identify the plot in the stdout message.
+                  The message is always "Saved {name} to {output}".
         tight   : bool
                   Whether to call `tight_layout()`
         tight_kwargs : dict
@@ -720,7 +723,7 @@ def savefig(output, fig=None, close=True, verbose=True, tight=True,
     if close:
         pylab.close()
     if verbose:
-        print('Saved to {0}'.format(output))
+        print('Saved {1} to {0}'.format(output, name))
     return
 
 
