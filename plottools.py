@@ -101,7 +101,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
            percentiles1d=True, background=None, bweight=None, bcolor='r',
            alpha=0.5, limits=None, show_likelihood_1d=False,
            ticks=None, show_contour=True, top_labels=False,
-           pad=1, h_pad=0, w_pad=0, output='', verbose=False,
+           pad=1, h_pad=0.1, w_pad=0.1, output='', verbose=False,
            names_kwargs={}, **kwargs):
     """
     Do a corner plot (e.g., with the posterior parameters of an MCMC chain).
@@ -247,7 +247,6 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     depth = lambda L: len(numpy.array(L).shape)
     #nchains = (len(X)-1 if depth(X) > 1 else 1)
     nchains = max(depth(X)-1, 1)
-    print(X.shape, depth(X), nchains)#, nchains2)
     if nchains > 1:
         ndim = len(X[0])
         nsamples = len(X[0][0])
