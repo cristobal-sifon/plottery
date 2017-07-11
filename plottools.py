@@ -1,4 +1,5 @@
-from __future__ import division, print_function
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
 import numpy
 import pylab
@@ -9,7 +10,9 @@ from itertools import count
 try:
     from itertools import izip
 except ImportError:
+    basestring = str
     izip = zip
+    xrange = range
 from matplotlib import cm, colors as mplcolors, rcParams, ticker
 from scipy import optimize
 from scipy.ndimage import zoom
@@ -18,7 +21,7 @@ from scipy.ndimage import zoom
 import colormaps
 
 
-__version__ = '0.2.2'
+__version__ = '0.2.3'
 
 
 def contour_levels(x, y=[], bins=10, levels=(0.68,0.95)):
@@ -343,8 +346,12 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
              bidepth > 2:
             print(msg)
             exit()
-    # adjusted to the required shape
+    # adjusted to the required shape (and type)
     bins, bins1d = meta_bins
+    if isinstance(bins[0][0], float):
+        bins = numpy.array(bins, dtype=int)
+    if isinstance(bins1d[0][0], float):
+        bins1d = numpy.array(bins1d, dtype=int)
     if len(X) == 1:
         if isinstance(colors, basestring):
             color1d = colors
