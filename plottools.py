@@ -755,13 +755,14 @@ def update_rcParams(dict={}):
     default['ytick.right'] = True
     default['axes.linewidth'] = 2
     default['axes.labelsize'] = 22
+    default['font.family'] = 'sans-serif'
     default['font.size'] = 22
     default['legend.fontsize'] = 18
     default['lines.linewidth'] = 2
     #default['mathtext.fontset'] = 'cm'
-    #default['mathtext.rm'] = 'serif'
-    default['pdf.use14corefonts'] = True
-    default['text.usetex'] = True
+    #default['mathtext.rm'] = 'sans-serif'
+    #default['pdf.use14corefonts'] = True
+    #default['text.usetex'] = True
     default['text.latex.preamble']=[r'\usepackage{amsmath}']
     # the matplotlib 2.x color cycle, for older versions
     default['axes.prop_cycle'] = \
