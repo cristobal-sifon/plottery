@@ -18,7 +18,7 @@ from scipy.ndimage import zoom
 import colormaps
 
 
-__version__ = '0.2.1'
+__version__ = '0.2.2'
 
 
 def contour_levels(x, y=[], bins=10, levels=(0.68,0.95)):
@@ -763,7 +763,10 @@ def update_rcParams(dict={}):
     # if any parameters are specified, overwrite anything previously
     # defined
     for key in dict:
-        rcParams[key] = dict[key]
+        try:
+            rcParams[key] = dict[key]
+        except KeyError:
+            pass
     return
 
 
