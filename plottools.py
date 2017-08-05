@@ -1,4 +1,5 @@
-from __future__ import division, print_function
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
 import numpy
 import pylab
@@ -9,7 +10,9 @@ from itertools import count
 try:
     from itertools import izip
 except ImportError:
+    basestring = str
     izip = zip
+    xrange = range
 from matplotlib import cm, colors as mplcolors, rcParams, ticker
 from scipy import optimize
 from scipy.ndimage import zoom
@@ -18,7 +21,7 @@ from scipy.ndimage import zoom
 import colormaps
 
 
-__version__ = '0.2.2'
+__version__ = '0.2.4'
 
 
 def contour_levels(x, y=[], bins=10, levels=(0.68,0.95)):
@@ -98,7 +101,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
            percentiles1d=True, background=None, bweight=None, bcolor='r',
            alpha=0.5, limits=None, show_likelihood_1d=False,
            ticks=None, show_contour=True, top_labels=False,
-           pad=1, h_pad=0, w_pad=0, output='', verbose=False,
+           pad=1, h_pad=0.1, w_pad=0.1, output='', verbose=False,
            names_kwargs={}, **kwargs):
     """
     Do a corner plot (e.g., with the posterior parameters of an MCMC chain).
@@ -244,7 +247,6 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     depth = lambda L: len(numpy.array(L).shape)
     #nchains = (len(X)-1 if depth(X) > 1 else 1)
     nchains = max(depth(X)-1, 1)
-    print(X.shape, depth(X), nchains)#, nchains2)
     if nchains > 1:
         ndim = len(X[0])
         nsamples = len(X[0][0])
@@ -343,8 +345,12 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
              bidepth > 2:
             print(msg)
             exit()
-    # adjusted to the required shape
+    # adjusted to the required shape (and type)
     bins, bins1d = meta_bins
+    if isinstance(bins[0][0], float):
+        bins = numpy.array(bins, dtype=int)
+    if isinstance(bins1d[0][0], float):
+        bins1d = numpy.array(bins1d, dtype=int)
     if len(X) == 1:
         if isinstance(colors, basestring):
             color1d = colors
@@ -688,8 +694,8 @@ def phase_space(R, v, sigma_v=0, hist_bins=10, ylim=None,
     return fig, [ax, right]
 
 
-def savefig(output, fig=None, close=True, verbose=True, tight=True,
-            tight_kwargs={'pad': 0.4}):
+def savefig(output, fig=None, close=True, verbose=True, name='',
+            tight=True, tight_kwargs={'pad': 0.4}):
     """
     Wrapper to save figures
 
@@ -706,6 +712,9 @@ def savefig(output, fig=None, close=True, verbose=True, tight=True,
                   Whether to close the figure after saving.
         verbose : bool
                   Whether to print the output filename on screen
+        name    : str
+                  A name to identify the plot in the stdout message.
+                  The message is always "Saved {name} to {output}".
         tight   : bool
                   Whether to call `tight_layout()`
         tight_kwargs : dict
@@ -720,7 +729,7 @@ def savefig(output, fig=None, close=True, verbose=True, tight=True,
     if close:
         pylab.close()
     if verbose:
-        print('Saved to {0}'.format(output))
+        print('Saved {1} to {0}'.format(output, name))
     return
 
 
@@ -746,13 +755,14 @@ def update_rcParams(dict={}):
     default['ytick.right'] = True
     default['axes.linewidth'] = 2
     default['axes.labelsize'] = 22
+    default['font.family'] = 'sans-serif'
     default['font.size'] = 22
     default['legend.fontsize'] = 18
     default['lines.linewidth'] = 2
     #default['mathtext.fontset'] = 'cm'
-    #default['mathtext.rm'] = 'serif'
-    default['pdf.use14corefonts'] = True
-    default['text.usetex'] = True
+    #default['mathtext.rm'] = 'sans-serif'
+    #default['pdf.use14corefonts'] = True
+    #default['text.usetex'] = True
     default['text.latex.preamble']=[r'\usepackage{amsmath}']
     # the matplotlib 2.x color cycle, for older versions
     default['axes.prop_cycle'] = \
@@ -763,6 +773,7 @@ def update_rcParams(dict={}):
     # if any parameters are specified, overwrite anything previously
     # defined
     for key in dict:
+        # some parameters are not valid in different matplotlib functions
         try:
             rcParams[key] = dict[key]
         except KeyError:
