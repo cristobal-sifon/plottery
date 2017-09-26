@@ -21,7 +21,7 @@ from scipy.ndimage import zoom
 import colormaps
 
 
-__version__ = '0.2.4'
+__version__ = '0.2.5'
 
 
 def contour_levels(x, y=[], bins=10, levels=(0.68,0.95)):
@@ -759,21 +759,20 @@ def update_rcParams(dict={}):
     default['font.size'] = 22
     default['legend.fontsize'] = 18
     default['lines.linewidth'] = 2
-    #default['mathtext.fontset'] = 'cm'
-    #default['mathtext.rm'] = 'sans-serif'
-    #default['pdf.use14corefonts'] = True
-    #default['text.usetex'] = True
-    default['text.latex.preamble']=[r'\usepackage{amsmath}']
+    default['text.latex.preamble']=['\\usepackage{amsmath}']
     # the matplotlib 2.x color cycle, for older versions
     default['axes.prop_cycle'] = \
         cycler(color=('#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
                       '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'))
     for key in default:
-        rcParams[key] = default[key]
+        # some parameters are not valid in different matplotlib functions
+        try:
+            rcParams[key] = default[key]
+        except KeyError:
+            pass
     # if any parameters are specified, overwrite anything previously
     # defined
     for key in dict:
-        # some parameters are not valid in different matplotlib functions
         try:
             rcParams[key] = dict[key]
         except KeyError:
