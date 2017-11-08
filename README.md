@@ -5,38 +5,37 @@ To install, download the latest release to somewhere in your python path from he
 
     https://github.com/cristobal-sifon/plottools/releases
 
-To get started, open an `(I)Python` terminal and type
+or simply clone the latest version:
 
-    import plottools
+    git clone https://github.com/cristobal-sifon/plottools.git
 
-This module is focused mostly on two functions: ``plottools.corner`` and ``plottools.wcslabels``. Both have explanatory help files. To see them, type
+The `plottools` package contains three modules, `astroplots`, `plotutils`, and `statsplots`, in addition to `colormaps`, which includes the new `matplotlib` colors, and was written by Nathaniel J. Smith, Stefan van der Walt, and (in the case of viridis) Eric Firing. See https://github.com/BIDS/colormap.
 
-    help(plottools.corner)
+Below is a brief description of each module's functions. See their help pages for more details.
 
-or 
-
-    help(plottools.wcslabels)
-
-Briefly,
-
-`plottools.corner` makes a corner plot, typically to view the output of an MCMC. It can handle as many parameters as desired, multiple chains, and has many options to tailor the style to the user and the problem at hand. Additionally, it returns the Figure and Axes objects, so the user can add features at will on top of the corner plot itself. For an example corner plot see figure 6 of [Sifon et al. (2015)] (http://arxiv.org/abs/1507.00737).
-
-`plottools.wcslabels` creates right ascension and declination ticklabels in hms and dms formats, respectively, given axis limits in decimal degrees.
-
-There are other, less used and less broad functions as well -- see the release page or type:
-
-    help(plottools)
+    astroplots:
+        phase_space -- Plot phase space diagram (i.e., velocity vs. distance).
+        wcslabels -- Generate HMS and DMS labels for RA and Dec given in decimal degrees.
+    plotutils:
+        colorscale -- Generate a colorbar and associated array of colors from a given data set.
+        savefig -- Convenience wrapper around functions used when commonly saving a figure.
+        update_rcParams -- Update rcParam configuration to make plots look nicer.
+    statsplots:
+        contour_levels -- Calculate contour levels at chosen percentiles for 2-dimensional data.
+        contours -- Plot contours using a reference image with WCS coordinates.
+        corner -- Make a corner plot.
+        
 
 ---
 
 ### To-do list
 This is a wish list for updates to the code. Feel free to make suggestions.
 
-  * `corner()`:
+  * `statsplots.corner()`:
     * use different `bcolors` for different models
     * implement different `truths` for different models
 
 ---
-*Last updated: 2016-Oct-25*
+*Last updated: Nov 2017*
 
 *(c) Cristóbal Sifón (Princeton)*
