@@ -2,7 +2,8 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 from cycler import cycler
-from matplotlib import cm, colors as mplcolors, pyplot as plt
+from matplotlib import (cm, colors as mplcolors, pyplot as plt,
+                        rcParams)
 from numpy import linspace
 
 from . import colormaps
