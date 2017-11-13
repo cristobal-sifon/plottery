@@ -6,6 +6,10 @@ from matplotlib import (cm, colors as mplcolors, pyplot as plt,
                         rcParams)
 from numpy import linspace
 
+import sys
+if sys.version_info[0] == 3:
+    basestring = str
+
 from . import colormaps
 
 
