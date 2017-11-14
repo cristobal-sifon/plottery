@@ -130,6 +130,7 @@ def update_rcParams(dict={}):
         default['{0}.minor.size'.format(tick)] = 4
         default['{0}.major.width'.format(tick)] = 2
         default['{0}.minor.width'.format(tick)] = 2
+        default['{0}.minor.visible'.format(tick)] = True
         default['{0}.labelsize'.format(tick)] = 20
         default['{0}.direction'.format(tick)] = 'in'
     default['xtick.top'] = True
