@@ -13,44 +13,53 @@ if sys.version_info[0] == 3:
 from . import colormaps
 
 
-def colorscale(array=None, vmin=0, vmax=1, n=0, cmap='viridis'):
+def colorscale(array=None, vmin=None, vmax=None, n=0, cmap='viridis'):
     """
-    Returns a set of colors and the associated colorscale, that can be
-    passed to `pylab.colorbar()`
+    Returns a set of colors and the associated colorscale, to be
+    passed to `plt.colorbar()`
 
     Optional parameters
     -------------------
-        array   : array-like of floats, shape (N,)
-                  values to which colors will be assigned
-        vmin    : float, 0 <= vmin < vmax
-                  minimum value for the color scale, on a scale from 0
-                  to 1.
-        vmax    : float, vmin < vmax <= 1
-                  maximum value for the color scale, on a scale from 0
-                  to 1.
-        n       : int
-                  number N of samples to draw in the range [vmin,vmax].
-                  Ignored if `array` is defined.
-        cmap    : str or `matplotlib.colors.ListedColormap` instance
-                  colormap to be used (or its name). New colormaps
-                  (viridis, inferno, plasma, magma) van be used with
-                  matplotlib<2.0 using the `colormaps` module included
-                  in this repository; in those cases the names must be
-                  given.
+    array : array-like of floats, shape (N,)
+        values to which colors will be assigned.
+    vmin : float
+        minimum value for the color scale
+    vmax : float, vmin < vmax
+        maximum value for the color scale
+    n : int
+        number of regular samples to draw in the range
+        `[vmin,vmax]`. Ignored if `array` is defined.
+    cmap : str or `matplotlib.colors.ListedColormap` instance
+        colormap to be used (or its name). New colormaps
+        (viridis, inferno, plasma, magma) can be used with
+        matplotlib<2.0 using the `colormaps` module included
+        in this repository; in those cases the names must be
+        given as string.
 
     Returns
     -------
-        ** If neither `array` nor `n` are defined **
-        colormap : `matplotlib.colors.ListedColormap` instance
-                  colormap, normalized to `vmin` and `vmax`.
+    ** If neither `array` nor `n` are defined **
+    colormap : `matplotlib.colors.ListedColormap` instance
+        colormap, normalized to `vmin` and `vmax`.
 
-        ** If either `array` or `n` is defined **
-        colors  : array-like, shape (4,N)
-                  array of RGBA colors
-        colormap : `matplotlib.colors.ListedColormap` instance
-                  colormap, normalized to `vmin` and `vmax`.
+    ** If either `array` or `n` are defined **
+    colors : array-like, shape (4,N)
+        array of RGBA colors
+    colormap : `matplotlib.colors.ListedColormap` instance
+        colormap, normalized to `vmin` and `vmax`.
 
+    Example
+    -------
+    # color-code particles according to velocity, normalizing the
+    # colorbar to [0,0.8] (e.g., to compare with other similar maps)
+    >>> x, y, v = np.random.random((3,100))
+    >>> colors, colormap = colorscale(array=v, vmin=0, vmax=0.8)
+    >>> plt.scatter(x, y, c=colors, s=360, marker='o')
+    >>> plt.colorbar(colormap)
     """
+    # just in case
+    assert n >= 0, 'Number `n` of samples must be >= 0'
+    # find colormap
     if isinstance(cmap, basestring):
         try:
             cmap = getattr(cm, cmap)
@@ -60,14 +69,28 @@ def colorscale(array=None, vmin=0, vmax=1, n=0, cmap='viridis'):
         msg = 'argument cmap must be a string or' \
               ' a matplotlib.colors.ListedColormap instance'
         raise TypeError(msg)
-    # define normalization for colomap
+    # Default values for vmin and vmax. Set to (0,1) if `array` is not
+    # provided; set to `(min(array),max(array))` otherwise.
+    if array is None:
+        if vmin is None:
+            vmin = 0
+        if vmax is None:
+            vmax = 1
+    else:
+        if vmin is None:
+            vmin = min(array)
+        if vmax is None:
+            vmax = max(array)
+    assert vmin < vmax, 'Please ensure `vmin < vmax`'
+
+    # define normalization for colormap
     cnorm = mplcolors.Normalize(vmin=vmin, vmax=vmax)
     colorbar = cm.ScalarMappable(norm=cnorm, cmap=cmap)
+    # this is necessary for the colorbar to be interpreted by
+    # plt.colorbar()
+    colorbar._A = []
     if array is None and n == 0:
         return colorbar
-    # this is necessary for the colorbar to be interpreted by
-    # pylab.colorbar()
-    colorbar._A = []
     # now get the colors
     if array is None:
         array = linspace(vmin, vmax, n)
