@@ -14,6 +14,7 @@ The `plottools` package contains three modules, `astroplots`, `plotutils`, and `
 Below is a brief description of each module's functions. See their help pages for more details.
 
     astroplots:
+        contour_overlay -- Overlay contours from one image on to another (new in v0.3.1).
         phase_space -- Plot phase space diagram (i.e., velocity vs. distance).
         wcslabels -- Generate HMS and DMS labels for RA and Dec given in decimal degrees.
     plotutils:
@@ -36,6 +37,6 @@ This is a wish list for updates to the code. Feel free to make suggestions.
     * implement different `truths` for different models
 
 ---
-*Last updated: Nov 2017*
+*Last updated: Feb 2018*
 
 *(c) Cristóbal Sifón (Princeton)*
