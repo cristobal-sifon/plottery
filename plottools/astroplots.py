@@ -2,8 +2,49 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 from astLib import astCoords, astWCS
+from astropy.io import fits
 from matplotlib import pyplot as plt
 from numpy import arange
+from scipy.ndimage import zoom
+
+
+def contour_overlay(ax, imgfile, contourfile, **kwargs):
+    """Overlay contours from an external image
+
+    Parameters
+    ----------
+    ax : `matplotlib.axes.Axes` instance
+        axis where the image is plotted, initialized e.g., through
+        `plt.axes` or `plt.subplot`
+    imgfile : `str`
+        filename of the image to be shown
+    contourfile : `str`
+        filename of the image from which to overlay contours
+    kwargs : `dict`
+        `plt.contour` keyword arguments (e.g., levels, colors)
+    """
+    # for some reason astWCS can read some files that astropy.wcs
+    # cannot
+    imgwcs = astWCS.WCS(imgfile)
+    contourwcs = astWCS.WCS(contourfile)
+    contourdata = fits.getdata(contourfile)
+    while len(contourdata.shape) > 2:
+        contourdata = contourdata[0]
+    # convert coords
+    ny, nx = contourdata.shape
+    xo, yo = contourwcs.pix2wcs(-1, -1)
+    x1, y1 = contourwcs.pix2wcs(nx, ny)
+    # astropy - is the pixel numbering convention correct?
+    #xo, yo = contourwcs.wcs_pix2world(0, 0)
+    #x1, y1 = contourwcs.wcs_pix2world(nx, ny)
+    xo, yo = imgwcs.wcs2pix(xo, yo)
+    x1, y1 = imgwcs.wcs2pix(x1, y1)
+    # astropy
+    #xo, yo = imgwcs.wcs_world2pix(xo, yo)
+    #x1, y1 = imgwcs.wcs_world2pix(x1, y1)
+    contourdata = zoom(contourdata, 3, order=3)
+    ax.contour(contourdata, extent=(xo,x1,yo,y1), **kwargs)
+    return
 
 
 def format_wcs(x):
