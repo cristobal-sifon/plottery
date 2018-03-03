@@ -5,7 +5,7 @@ from astLib import astCoords
 from astLib.astWCS import WCS
 from astropy.io import fits
 from matplotlib import pyplot as plt
-from numpy import arange, array
+import numpy as np
 from scipy import ndimage
 
 
@@ -38,7 +38,7 @@ def contour_overlay(
     # cannot
     imgwcs = WCS(imgfile)
     contourwcs = WCS(contourfile)
-    contourdata = array(fits.getdata(contourfile), dtype=float)
+    contourdata = np.array(fits.getdata(contourfile), dtype=float)
     while len(contourdata.shape) > 2:
         contourdata = contourdata[0]
     # convert coords
@@ -143,9 +143,9 @@ def phase_space(
                                    histtype='stepfilled', color='y')
     if sigma_v > 0:
         n_area = (n * (edges[1:] - edges[:-1])).sum()
-        t = numpy.linspace(ylim[0], ylim[1], 101)
+        t = np.linspace(ylim[0], ylim[1], 101)
         x = (t[1:] + t[:-1]) / 2
-        f = numpy.exp(-x**2/(2*sigma_v**2)) / ((2*numpy.pi)**2*sigma_v)
+        f = np.exp(-x**2/(2*sigma_v**2)) / ((2*np.pi)**2*sigma_v)
         f_area = (f * (t[1:] - t[:-1])).sum()
         right.plot(f/f_area*n_area, x, '-', color=(1,0,0))
     right.xaxis.set_major_locator(ticker.MaxNLocator(3))
@@ -198,12 +198,12 @@ def wcslabels(wcs, xlim, ylim, xsep='00:00:01', ysep='00:00:15',
     left, right = xlim
     bottom, top = ylim
     wcslim = [wcs.pix2wcs(left, bottom), wcs.pix2wcs(right, top)]
-    ralim, declim = numpy.transpose(wcslim)
+    ralim, declim = np.transpose(wcslim)
     rasep = astCoords.hms2decimal(xsep, ':')
     decsep = astCoords.dms2decimal(ysep, ':')
-    raticks = arange(0, max(ralim), rasep)
+    raticks = np.arange(0, max(ralim), rasep)
     raticks = raticks[raticks > min(ralim)]
-    decticks = arange(-90, max(declim), decsep)
+    decticks = np.arange(-90, max(declim), decsep)
     decticks = decticks[decticks > min(declim)]
     # this assumes that the rotation angle of the image is 0/90/180/270
     # degrees
