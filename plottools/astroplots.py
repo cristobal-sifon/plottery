@@ -60,13 +60,23 @@ def contour_overlay(
     return contours
 
 
-def format_wcs(x):
+def format_wcs(x, sep=':'):
     """
     Replace the 60's for 0's and change other values consistently,
     and add 0's at the beginning of single-digit values
 
+    Generally not intended for stand-alone use, but rather this
+    function is called by `wcslabels`
+
+    Parameters
+    ----------
+    x : `str`
+        Sky coordinate string in hms or dms format
+    sep : `char`
+        Character used to separate hours/degrees, minutes and seconds
+
     """
-    x = x.split(':')
+    x = x.split(sep)
     x[2] = round(float(x[2]), 0)
     x[2] = '{0:.0f}'.format(x[2]) if x[2] >= 10 \
             else '0{0:.0f}'.format(x[2])
@@ -80,10 +90,10 @@ def format_wcs(x):
             else:
                 x[i] = str(int(x[i]) + 1)
             x[i+1] = '00'
-    for i in xrange(len(x)):
-        if 0 <= int(x[i]) < 10:
+    for i in range(len(x)):
+        if 0 <= int(x[i]) < 10 and x[0][0] != '-':
             x[i] = '0{:.0f}'.format(int(x[i]))
-        elif -10 < int(x[i]) < 0:
+        elif -10 < int(x[i]) <= 0:
             x[i] = '-0{:.0f}'.format(-int(x[i]))
     return ':'.join(x)
 
@@ -165,10 +175,9 @@ def wcslabels(wcs, xlim, ylim, xsep='00:00:01', ysep='00:00:15',
     ----------
         wcs     : astWCS.WCS instance
                   the wcs of the image to be shown
-        xlim    : sequence of length 2
-                  the minimum and maximum values of the x axis
-        ylim    : sequence of length 2
-                  the minimum and maximum values of the y axis
+        xlim, ylim : sequences of length 2
+                  the minimum and maximum values of the x and y axes,
+                  in pixels
         xsep    : string
                   separation of right ascension ticks in the x axis,
                   in colon-separated hms format
@@ -194,6 +203,9 @@ def wcslabels(wcs, xlim, ylim, xsep='00:00:01', ysep='00:00:15',
         [yticks, yticklabels] : lists containing the positions and
                   labels for declination dms labels
 
+    Note : this function has not been tested when the rotation angle of
+        the image is not a multiple of 90 degrees.
+
     """
     left, right = xlim
     bottom, top = ylim
@@ -213,15 +225,24 @@ def wcslabels(wcs, xlim, ylim, xsep='00:00:01', ysep='00:00:15',
     yticklabels = [astCoords.decimal2dms(t, ':').replace('+', '')
                    for t in decticks]
     # format properly (remove 60's and add 0's)
-    xticklabels = [format_wcs(xt) for xt in xticklabels]
-    yticklabels = [format_wcs(yt) for yt in yticklabels]
+    xticklabels = np.array([format_wcs(xt) for xt in xticklabels])
+    yticklabels = np.array([format_wcs(yt) for yt in yticklabels])
     # get tick positions for rounded labels
     raticks = [astCoords.hms2decimal(xt, ':') for xt in xticklabels]
     decticks = [astCoords.dms2decimal(yt, ':') for yt in yticklabels]
-    xticks = [wcs.wcs2pix(x, declim[0])[0] for x in raticks]
-    yticks = [wcs.wcs2pix(ralim[0], y)[1] for y in decticks]
+    xticks = np.array([wcs.wcs2pix(x, declim[0])[0] for x in raticks])
+    yticks = np.array([wcs.wcs2pix(ralim[0], y)[1] for y in decticks])
+    # it seems they must be sorted?
+    j = np.argsort(xticks)
+    xticks = xticks[j]
+    xticklabels = xticklabels[j]
+    j = np.argsort(yticks)
+    yticks = yticks[j]
+    yticklabels = yticklabels[j]
     # display?
     if ax:
+        ax.set_xlim(*xlim)
+        ax.set_ylim(*ylim)
         ax.set_xticks(xticks)
         ax.set_yticks(yticks)
         ax.set_xticklabels(xticklabels, color=label_color, rotation=rotate_x)
