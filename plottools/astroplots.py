@@ -1,14 +1,17 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from astLib import astCoords, astWCS
+from astLib import astCoords
+from astLib.astWCS import WCS
 from astropy.io import fits
 from matplotlib import pyplot as plt
-from numpy import arange
-from scipy.ndimage import zoom
+from numpy import arange, array
+#from scipy.ndimage import zoom
+from scipy import ndimage
 
 
-def contour_overlay(ax, imgfile, contourfile, **kwargs):
+def contour_overlay(ax, imgfile, contourfile, smoothing='gaussian_filter',
+                    args=(3,), smoothing_kwargs={}, **contour_kwargs):
     """Overlay contours from an external image
 
     Parameters
@@ -20,14 +23,22 @@ def contour_overlay(ax, imgfile, contourfile, **kwargs):
         filename of the image to be shown
     contourfile : `str`
         filename of the image from which to overlay contours
-    kwargs : `dict`
+    smoothing : `scipy.ndimage` attribute
+        name of any appropriate `scipy.ndimage` function. Set to `None`
+        to disable.
+    args : `tuple`
+        positional arguments to pass to the function defined by
+        `smoothing` (e.g., sigma for `gaussian_filter`)
+    smoothing_kwargs : `dict` (optional)
+        keyword arguments passed to the function defined by `smoothing`
+    contour_kwargs : `dict`
         `plt.contour` keyword arguments (e.g., levels, colors)
     """
     # for some reason astWCS can read some files that astropy.wcs
     # cannot
-    imgwcs = astWCS.WCS(imgfile)
-    contourwcs = astWCS.WCS(contourfile)
-    contourdata = fits.getdata(contourfile)
+    imgwcs = WCS(imgfile)
+    contourwcs = WCS(contourfile)
+    contourdata = array(fits.getdata(contourfile), dtype=float)
     while len(contourdata.shape) > 2:
         contourdata = contourdata[0]
     # convert coords
@@ -42,9 +53,13 @@ def contour_overlay(ax, imgfile, contourfile, **kwargs):
     # astropy
     #xo, yo = imgwcs.wcs_world2pix(xo, yo)
     #x1, y1 = imgwcs.wcs_world2pix(x1, y1)
-    contourdata = zoom(contourdata, 3, order=3)
-    ax.contour(contourdata, extent=(xo,x1,yo,y1), **kwargs)
-    return
+    print(contourdata.min(), contourdata.max())
+    if smoothing is not None:
+        smoothing_func = getattr(ndimage, smoothing)
+        contourdata = smoothing_func(contourdata, *args, **smoothing_kwargs)
+    print(contourdata.min(), contourdata.max())
+    contours = ax.contour(contourdata, extent=(xo,x1,yo,y1), **contour_kwargs)
+    return contours
 
 
 def format_wcs(x):
