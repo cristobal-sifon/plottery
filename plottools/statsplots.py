@@ -3,10 +3,8 @@ from __future__ import (absolute_import, division, print_function,
 
 import numpy
 import sys
-from astLib import astWCS
 from astropy.io import fits
 from scipy.interpolate import spline
-from scipy.ndimage import zoom
 from scipy.ndimage.filters import gaussian_filter
 
 if sys.version_info[0] == 3:
@@ -15,8 +13,9 @@ if sys.version_info[0] == 3:
 
 def contour_levels(x, y=[], bins=10, levels=(0.68,0.95)):
     """
-    Get the contour levels corresponding to a set of percentiles (given as
-    fraction of 1) for a 2d histogram.
+    Get the contour levels corresponding to a set of percentiles (given
+    as fraction of 1) for a 2d histogram. Used commonly to plot
+    posterior distributions from MCMC samples.
 
     Parameters
     ----------
@@ -58,27 +57,6 @@ def contour_levels(x, y=[], bins=10, levels=(0.68,0.95)):
     level_values = [optimize.bisect(findlevel, hist.min(), hist.max(),
                                     args=(hist,l)) for l in levels]
     return level_values
-
-
-def contours(ax, imgwcs, contourfile, levels, colors, lw=1):
-    """
-    Draw contours from contourfile in the frame of imgwcs.
-
-    """
-    contourwcs = astWCS.WCS(contourfile)
-    contourdata = fits.getdata(contourfile)
-    while len(contourdata.shape) > 2:
-        contourdata = contourdata[0]
-    # convert coords
-    ny, nx = contourdata.shape
-    xo, yo = contourwcs.pix2wcs(-1, -1)
-    x1, y1 = contourwcs.pix2wcs(nx, ny)
-    xo, yo = imgwcs.wcs2pix(xo, yo)
-    x1, y1 = imgwcs.wcs2pix(x1, y1)
-    contourdata = zoom(contourdata, 3, order=3)
-    ax.contour(contourdata, levels, colors=colors, linewidths=lw,
-               extent=(xo,x1,yo,y1))
-    return
 
 
 def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
