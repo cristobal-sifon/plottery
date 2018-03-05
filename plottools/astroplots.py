@@ -82,19 +82,12 @@ def format_wcs(x, sep=':'):
             else '0{0:.0f}'.format(x[2])
     for i in (1, 0):
         if x[i+1] == '60':
-            if x[0][0] == '-':
-                if i == 0:
-                    x[i] = '-{0}'.format(str(int(x[i]) - 1))
-                else:
-                    x[i] = str(int(x[i]) - 1)
-            else:
-                x[i] = str(int(x[i]) + 1)
             x[i+1] = '00'
-    for i in range(len(x)):
-        if 0 <= int(x[i]) < 10 and x[0][0] != '-':
-            x[i] = '0{:.0f}'.format(int(x[i]))
-        elif -10 < int(x[i]) <= 0:
-            x[i] = '-0{:.0f}'.format(-int(x[i]))
+            x[i] = str(int(x[i]) + 1)
+    south = True if x[0][0] == '-' else False
+    x = ['{0:02d}'.format(int(i)) for i in x]
+    if south:
+        x[0] = '-{0}'.format(x[0])
     return ':'.join(x)
 
 
@@ -167,7 +160,8 @@ def phase_space(
 
 
 def wcslabels(wcs, xlim, ylim, xsep='00:00:01', ysep='00:00:15',
-              ax=None, label_color='k', rotate_x=0, rotate_y=90):
+              ax=None, label_color='k', tick_color='w', axes_color=None,
+              rotate_x=0, rotate_y=90):
     """
     Get WCS ticklabels
 
@@ -189,6 +183,11 @@ def wcslabels(wcs, xlim, ylim, xsep='00:00:01', ysep='00:00:15',
         label_color : string or matplotlib color
                   color with which the tick labels will be displayed,
                   if ax is provided
+        tick_color : string or matplotlib color
+                  color for the ticks, applied to both axes.
+        axes_color : string or matplotlib color (optional)
+                  color for the axes. If not set, `tick_color` will be
+                  used.
         rotate_x : float
                   by how much to rotate the x tick labels if ax is
                   provided
@@ -203,8 +202,8 @@ def wcslabels(wcs, xlim, ylim, xsep='00:00:01', ysep='00:00:15',
         [yticks, yticklabels] : lists containing the positions and
                   labels for declination dms labels
 
-    Note : this function has not been tested when the rotation angle of
-        the image is not a multiple of 90 degrees.
+    Note : this function assumes that RA runs along the x axis and Decl
+        runs along the y axis. Will generalize in the future.
 
     """
     left, right = xlim
@@ -245,8 +244,24 @@ def wcslabels(wcs, xlim, ylim, xsep='00:00:01', ysep='00:00:15',
         ax.set_ylim(*ylim)
         ax.set_xticks(xticks)
         ax.set_yticks(yticks)
-        ax.set_xticklabels(xticklabels, color=label_color, rotation=rotate_x)
-        ax.set_yticklabels(yticklabels, color=label_color, rotation=rotate_y)
+        ax.set_xticklabels(xticklabels)
+        ax.set_yticklabels(yticklabels)
+        plt.setp(ax.xaxis.get_ticklabels(), rotation=rotate_x)
+        if rotate_y == 90:
+            va = 'center'
+        else:
+            va = 'top'
+        plt.setp(ax.yaxis.get_ticklabels(), rotation=rotate_y, va=va)
+        # set tick colors. Doing it here so I don't need to remember
+        # these three commands every time, plus the order seems to
+        # matter here
+        if axes_color is None:
+            axes_color = tick_color
+        for key, spine in ax.spines.items():
+            spine.set_color(axes_color)
+        ax.tick_params(axis='both', which='both', colors=tick_color)
+        ax.set_xticklabels(xticklabels, color=label_color)
+        ax.set_yticklabels(yticklabels, color=label_color)
     return [xticks, xticklabels], [yticks, yticklabels]
 
 
