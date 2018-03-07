@@ -26,7 +26,6 @@ Below is a brief description of each module's functions. See their help pages fo
         update_rcParams -- Update rcParam configuration to make plots look nicer.
     statsplots:
         contour_levels -- Calculate contour levels at chosen percentiles for 2-dimensional data.
-        contours -- Plot contours using a reference image with WCS coordinates.
         corner -- Make a corner plot.
         
 
