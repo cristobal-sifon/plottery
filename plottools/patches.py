@@ -100,7 +100,7 @@ class LogEllipse(Polygon):
         self.logy = np.log10(xy[1])
         self.logwidth = logwidth
         self.logheight = logheight
-        _x = np.linspace(-self.logwidth, +self.logwidth, self.npts)
+        _x = np.linspace(-self.logwidth, self.logwidth, self.npts)
         _y = (self.logheight/self.logwidth) * (self.logwidth**2-_x**2)**0.5
         self._x = np.append(_x, _x[::-1])
         self._y = np.append(-_y, _y)

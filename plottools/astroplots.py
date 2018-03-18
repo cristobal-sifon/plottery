@@ -20,7 +20,8 @@ def contour_overlay(
         axis where the image is plotted, initialized e.g., through
         `plt.axes` or `plt.subplot`
     imgfile : `str`
-        filename of the image to be shown
+        filename of the FITS image to be shown, or the FITS image
+        associated with the color image to be shown
     contourfile : `str`
         filename of the image from which to overlay contours
     smoothing : `scipy.ndimage` attribute
