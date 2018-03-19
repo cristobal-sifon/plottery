@@ -83,10 +83,7 @@ def format_wcs(x, sep=':'):
         if x[i+1] == '60':
             x[i+1] = '00'
             x[i] = str(int(x[i]) + 1)
-    south = True if x[0][0] == '-' else False
-    x = ['{0:02d}'.format(int(i)) for i in x]
-    if south:
-        x[0] = '-{0}'.format(x[0])
+    #south = True if x[0][0] == '-' else False
     return ':'.join(x)
 
 
