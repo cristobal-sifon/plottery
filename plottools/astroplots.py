@@ -266,7 +266,6 @@ def wcslabels(wcs, xlim, ylim, xsep='00:00:01', ysep='00:00:15',
         ax.tick_params(axis='both', which='both', colors=tick_color)
         ax.set_xticklabels(xticklabels, color=label_color)
         ax.set_yticklabels(yticklabels, color=label_color)
-    print([xticks, xticklabels], [yticks, yticklabels])
     return [xticks, xticklabels], [yticks, yticklabels]
 
 
