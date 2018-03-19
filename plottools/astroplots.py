@@ -78,9 +78,7 @@ def format_wcs(x, sep=':'):
 
     """
     x = x.split(sep)
-    x[2] = round(float(x[2]), 0)
-    x[2] = '{0:.0f}'.format(x[2]) if x[2] >= 10 \
-            else '0{0:.0f}'.format(x[2])
+    x[2] = '{0:02.0f}'.format(float(x[2]))
     for i in (1, 0):
         if x[i+1] == '60':
             x[i+1] = '00'
@@ -190,11 +188,9 @@ def wcslabels(wcs, xlim, ylim, xsep='00:00:01', ysep='00:00:15',
                   color for the axes. If not set, `tick_color` will be
                   used.
         rotate_x : float
-                  by how much to rotate the x tick labels if ax is
-                  provided
+                  xticklabel rotation, in deg
         rotate_y : float
-                  by how much to rotate the y tick labels if ax is
-                  provided
+                  yticklabel rotation, in deg
 
     Returns
     -------
@@ -219,11 +215,18 @@ def wcslabels(wcs, xlim, ylim, xsep='00:00:01', ysep='00:00:15',
     decticks = decticks[decticks > min(declim)]
     # this assumes that the rotation angle of the image is 0/90/180/270
     # degrees
-    xticks = [wcs.wcs2pix(x, declim[0])[0] for x in raticks]
-    yticks = [wcs.wcs2pix(ralim[0], y)[0] for y in decticks]
+    xticks = [wcs.wcs2pix(x, round(declim[0], 4))[0] for x in raticks]
+    yticks = [wcs.wcs2pix(round(ralim[0], 4), y)[1] for y in decticks]
     xticklabels = [astCoords.decimal2hms(t, ':') for t in raticks]
-    yticklabels = [astCoords.decimal2dms(t, ':').replace('+', '')
-                   for t in decticks]
+    yticklabels = [astCoords.decimal2dms(t, ':') for t in decticks]
+    # this corrects for machine-precision errors, which can be on the
+    # order of a couple hundredths of a second
+    if np.array(xsep.split(':')[:2], dtype=int).sum() > 0:
+        xticklabels = [':'.join([t.split(':')[0], t.split(':')[1], '00'])
+                       for t in xticklabels]
+    if np.array(ysep.split(':')[:2], dtype=int).sum() > 0:
+        yticklabels = [':'.join([t.split(':')[0], t.split(':')[1], '00'])
+                       for t in yticklabels]
     # format properly (remove 60's and add 0's)
     xticklabels = np.array([format_wcs(xt) for xt in xticklabels])
     yticklabels = np.array([format_wcs(yt) for yt in yticklabels])
@@ -263,6 +266,7 @@ def wcslabels(wcs, xlim, ylim, xsep='00:00:01', ysep='00:00:15',
         ax.tick_params(axis='both', which='both', colors=tick_color)
         ax.set_xticklabels(xticklabels, color=label_color)
         ax.set_yticklabels(yticklabels, color=label_color)
+    print([xticks, xticklabels], [yticks, yticklabels])
     return [xticks, xticklabels], [yticks, yticklabels]
 
 
