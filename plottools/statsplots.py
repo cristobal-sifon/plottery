@@ -1,9 +1,11 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+from astropy.io import fits
+from itertools import count
+from matplotlib import pyplot as plt
 import numpy
 import sys
-from astropy.io import fits
 from scipy.interpolate import spline
 from scipy.ndimage.filters import gaussian_filter
 
@@ -378,7 +380,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                     else:
                         print('(truth: {0})'.format(truths[i]))
                     print('    p50.0  {0:.3f}'.format(numpy.median(Xm[i])))
-            for p, ls in izip(clevels, axvls):
+            for p, ls in zip(clevels, axvls):
                 v = [numpy.percentile(Xm[i], 100*(1-p)/2.),
                      numpy.percentile(Xm[i], 100*(1+p)/2.)]
                 if percentiles1d:
@@ -387,7 +389,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                 if verbose:
                     print('    p%.1f  %.3f  %.3f' %(100*p, v[0], v[1]))
         if likelihood is not None:
-            for m, Xm, Lm, e in izip(count(), X, likelihood, edges):
+            for m, Xm, Lm, e in zip(count(), X, likelihood, edges):
                 binning = numpy.digitize(Xm[i], e[m])
                 xo = 0.5 * (e[m][1:] + e[m][:-1])
                 # there can be nan's because some bins have no data
