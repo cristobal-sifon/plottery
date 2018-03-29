@@ -1,10 +1,10 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+import numpy as np
 from cycler import cycler
 from matplotlib import (cm, colors as mplcolors, pyplot as plt,
                         rcParams)
-from numpy import linspace
 
 import sys
 if sys.version_info[0] == 3:
@@ -77,10 +77,11 @@ def colorscale(array=None, vmin=None, vmax=None, n=0, cmap='viridis'):
         if vmax is None:
             vmax = 1
     else:
+        array = np.array(array)
         if vmin is None:
-            vmin = min(array)
+            vmin = array.min()
         if vmax is None:
-            vmax = max(array)
+            vmax = array.max()
     assert vmin < vmax, 'Please ensure `vmin < vmax`'
 
     # define normalization for colormap
@@ -93,7 +94,7 @@ def colorscale(array=None, vmin=None, vmax=None, n=0, cmap='viridis'):
         return colorbar
     # now get the colors
     if array is None:
-        array = linspace(vmin, vmax, n)
+        array = np.linspace(vmin, vmax, n)
     colors = colorbar.to_rgba(array)
     return colors, colorbar
 

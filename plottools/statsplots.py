@@ -220,7 +220,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
 
     """
     # not yet implemented
-    options = _load_corner_config(config)
+    #options = _load_corner_config(config)
     # the depth of an array or list. Useful to assess the proper format of
     # arguments. Returns zero if scalar.
     depth = lambda L: len(numpy.array(L).shape)
