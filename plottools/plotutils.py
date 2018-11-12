@@ -165,10 +165,10 @@ def update_rcParams(dict={}):
     default['legend.fontsize'] = 18
     default['lines.linewidth'] = 2
     default['text.latex.preamble']=['\\usepackage{amsmath}']
-    # the matplotlib 2.x color cycle, for older versions
+    # Matthew Hasselfield's color-blind-friendly style
     default['axes.prop_cycle'] = \
-        cycler(color=('#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
-                      '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'))
+        cycler(color=['#2424f0','#df6f0e','#3cc03c','#d62728','#b467bd',
+                      '#ac866b','#e397d9','#9f9f9f','#ecdd72','#77becf'])
     for key in default:
         # some parameters are not valid in different matplotlib functions
         try:
