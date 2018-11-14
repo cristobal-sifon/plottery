@@ -5,10 +5,8 @@ import numpy as np
 from cycler import cycler
 from matplotlib import (cm, colors as mplcolors, pyplot as plt,
                         rcParams)
+import six
 
-import sys
-if sys.version_info[0] == 3:
-    basestring = str
 
 from . import colormaps
 
@@ -60,7 +58,7 @@ def colorscale(array=None, vmin=None, vmax=None, n=0, cmap='viridis'):
     # just in case
     assert n >= 0, 'Number `n` of samples must be >= 0'
     # find colormap
-    if isinstance(cmap, basestring):
+    if isinstance(cmap, six.string_types):
         try:
             cmap = getattr(cm, cmap)
         except AttributeError:
