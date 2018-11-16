@@ -98,7 +98,7 @@ def colorscale(array=None, vmin=None, vmax=None, n=0, cmap='viridis'):
 
 
 def savefig(output, fig=None, close=True, verbose=True, name='',
-            tight=True, tight_kwargs={'pad': 0.4}):
+            tight=True, **kwargs):
     """
     Wrapper to save figures
 
@@ -120,14 +120,16 @@ def savefig(output, fig=None, close=True, verbose=True, name='',
                   The message is always "Saved {name} to {output}".
         tight   : bool
                   Whether to call `tight_layout()`
-        tight_kwargs : dict
+        kwargs : dict
                   keyword arguments to be passed to `tight_layout()`
 
     """
     if fig is None:
         fig = plt
     if tight:
-        fig.tight_layout(**tight_kwargs)
+        if 'pad' not in kwargs:
+            kwargs['pad'] = 0.4
+        fig.tight_layout(**kwargs)
     fig.savefig(output)
     if close:
         plt.close()
