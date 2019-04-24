@@ -3,14 +3,16 @@ from __future__ import (absolute_import, division, print_function,
 
 from astropy.io import fits
 from itertools import count
-from matplotlib import pyplot as plt
-import numpy
-import sys
+from matplotlib import cm, pyplot as plt
+import numpy as np
+from scipy import optimize
 from scipy.interpolate import spline
 from scipy.ndimage.filters import gaussian_filter
+import six
+import sys
 
-if sys.version_info[0] == 3:
-    xrange = range
+if sys.version_info[0] == 2:
+    range = xrange
 
 
 def contour_levels(x, y=[], bins=10, levels=(0.68,0.95)):
@@ -26,7 +28,7 @@ def contour_levels(x, y=[], bins=10, levels=(0.68,0.95)):
             x should be a 2d array
         y : array of floats (optional)
             1d array with the same number of elements as x
-        bins : argument of numpy.histogram2d
+        bins : argument of np.histogram2d
         levels : list of floats between 0 and 1
             the fractional percentiles of the data that should be above the
             returned values
@@ -44,18 +46,18 @@ def contour_levels(x, y=[], bins=10, levels=(0.68,0.95)):
             msg += ' or 2 1d arrays'
             raise ValueError(msg)
     else:
-        if len(numpy.array(x).shape) != 2:
+        if len(np.array(x).shape) != 2:
             msg = 'Invalid input for arrays; must be either 1 2d array'
             msg += ' or 2 1d arrays'
             raise ValueError(msg)
     def findlevel(lo, hist, level):
         return 1.0 * hist[hist >= lo].sum()/hist.sum() - level
     if len(x) == len(y):
-        hist, xedges, yedges = numpy.histogram2d(x, y, bins=bins)
-        hist = numpy.transpose(hist)
+        hist, xedges, yedges = np.histogram2d(x, y, bins=bins)
+        hist = np.transpose(hist)
         extent = (xedges[0], xedges[-1], yedges[0], yedges[-1])
     elif len(y) == 0:
-        hist = numpy.array(x)
+        hist = np.array(x)
     level_values = [optimize.bisect(findlevel, hist.min(), hist.max(),
                                     args=(hist,l)) for l in levels]
     return level_values
@@ -158,7 +160,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
       percentiles1d : bool
                   whether to show selected percentiles (see *clevels*) in the
                   diagonal panels as vertical lines
-      background : one of {None, 'points', 'density', 'filled'}
+      background : one of {None, 'points', 'density', 'logdensity', 'filled'}
                   If not None, then either points, a smoothed 2d histogram,
                   or filled contours are plotted beneath contours.
       bweight   : array-like, same length as e.g., A1
@@ -203,7 +205,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     #options = _load_corner_config(config)
     # the depth of an array or list. Useful to assess the proper format of
     # arguments. Returns zero if scalar.
-    depth = lambda L: len(numpy.array(L).shape)
+    depth = lambda L: len(np.array(L).shape)
     #nchains = (len(X)-1 if depth(X) > 1 else 1)
     nchains = max(depth(X)-1, 1)
     if nchains > 1:
@@ -244,6 +246,8 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                 or len(lshape) != 2:
             print(msg)
             likelihood = None
+    # what to show in the off-diagonals
+    assert contour_reference in (None, 'likelihood', 'samples')
 
     # check clevels - they should be fractions between 0 and 1 for
     # contour_reference == 'samples'.
@@ -278,40 +282,40 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     # check the binning scheme.
     meta_bins = [bins, bins1d]
     for i, bname in enumerate(('bins','bins1d')):
-        bi = numpy.array(meta_bins[i])
+        bi = np.array(meta_bins[i])
         bidepth = depth(bi)
         # will be the same message in all cases below
         msg = 'ERROR: number of {0} must equal either number'.format(bname)
         msg += ' of chains or number of parameters, or have shape'
         msg += ' (nchains,nparams)'
         # this means binning will be the same for all chains
-        ones = numpy.ones((nchains,ndim))
+        ones = np.ones((nchains,ndim))
         # is it a scalar?
         if bidepth == 0:
             meta_bins[i] = bi.T * ones
         # or a 1d list?
         elif bidepth == 1:
-            bi = numpy.array(bi)
+            bi = np.array(bi)
             if len(bi) == ndim:
                 meta_bins[i] = ones * bi
             elif len(bi) == nchains:
-                meta_bins[i] = ones * bi[:,numpy.newaxis]
+                meta_bins[i] = ones * bi[:,np.newaxis]
             else:
                 print(msg)
                 exit()
         elif (bidepth == 2 and nchains > 1 and \
-              numpy.array(bi).shape != ones.shape) or \
+              np.array(bi).shape != ones.shape) or \
              bidepth > 2:
             print(msg)
             exit()
     # adjusted to the required shape (and type)
     bins, bins1d = meta_bins
     if isinstance(bins[0][0], float):
-        bins = numpy.array(bins, dtype=int)
+        bins = np.array(bins, dtype=int)
     if isinstance(bins1d[0][0], float):
-        bins1d = numpy.array(bins1d, dtype=int)
+        bins1d = np.array(bins1d, dtype=int)
     if len(X) == 1:
-        if isinstance(colors, basestring):
+        if isinstance(colors, six.string_types):
             color1d = colors
         else:
             color1d = 'k'
@@ -322,9 +326,9 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
         else:
             color1d = ('g', 'orange', 'c', 'm', 'b', 'y',
                        'g', 'orange', 'c', 'm', 'b', 'y')
-    if isinstance(ls1d, basestring):
+    if isinstance(ls1d, six.string_types):
         ls1d = [ls1d for i in X]
-    if isinstance(ls2d, basestring):
+    if isinstance(ls2d, six.string_types):
         ls2d = [ls2d for i in X]
     # to move the model legend around
     names_kwargs_defaults = {'loc': 'center',
@@ -336,8 +340,8 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             names_kwargs[key] = names_kwargs_defaults[key]
     # all set!
     axvls = ('--', ':', '-.')
-    fig, axes = plt.subplots(figsize=(2*ndim+1,2*ndim+1), ncols=ndim,
-                               nrows=ndim)
+    fig, axes = plt.subplots(
+        figsize=(2*ndim+1,2*ndim+1), ncols=ndim, nrows=ndim)
     # diagonals first
     plot_ranges = []
     axes_diagonal = []
@@ -345,7 +349,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     model_lines = []
     # for backward compatibility
     histtype = style1d.replace('hist', 'step')
-    for i in xrange(ndim):
+    for i in range(ndim):
         ax = axes[i][i]
         axes_diagonal.append(ax)
         peak = 0
@@ -353,9 +357,9 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
         for m, Xm in enumerate(X):
             edges.append([])
             if style1d == 'curve':
-                ho, e = numpy.histogram(Xm[i], bins=bins1d[m][i], normed=True)
+                ho, e = np.histogram(Xm[i], bins=bins1d[m][i], normed=True)
                 xo = 0.5 * (e[1:] + e[:-1])
-                xn = numpy.linspace(xo.min(), xo.max(), 500)
+                xn = np.linspace(xo.min(), xo.max(), 500)
                 n = spline(xo, ho, xn)
                 line, = ax.plot(xn, n, ls=ls1d[m], color=color1d[m])
                 if i == 0:
@@ -369,7 +373,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                 peak = n.max()
             area = n.sum()
             if medians1d:
-                ax.axvline(numpy.median(Xm[i]), ls='-', color=color1d[m])
+                ax.axvline(np.median(Xm[i]), ls='-', color=color1d[m])
             if verbose:
                 if len(names) == len(X):
                     print('names[{0}] = {1}'.format(m, names[m]))
@@ -379,10 +383,10 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                         print('')
                     else:
                         print('(truth: {0})'.format(truths[i]))
-                    print('    p50.0  {0:.3f}'.format(numpy.median(Xm[i])))
+                    print('    p50.0  {0:.3f}'.format(np.median(Xm[i])))
             for p, ls in zip(clevels, axvls):
-                v = [numpy.percentile(Xm[i], 100*(1-p)/2.),
-                     numpy.percentile(Xm[i], 100*(1+p)/2.)]
+                v = [np.percentile(Xm[i], 100*(1-p)/2.),
+                     np.percentile(Xm[i], 100*(1+p)/2.)]
                 if percentiles1d:
                     ax.axvline(v[0], ls=ls, color=color1d[m])
                     ax.axvline(v[1], ls=ls, color=color1d[m])
@@ -390,16 +394,16 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                     print('    p%.1f  %.3f  %.3f' %(100*p, v[0], v[1]))
         if likelihood is not None:
             for m, Xm, Lm, e in zip(count(), X, likelihood, edges):
-                binning = numpy.digitize(Xm[i], e[m])
+                binning = np.digitize(Xm[i], e[m])
                 xo = 0.5 * (e[m][1:] + e[m][:-1])
                 # there can be nan's because some bins have no data
-                valid = numpy.array([(len(Lm[binning == ii]) > 0)
-                               for ii in xrange(1, len(e[m]))])
-                Lmbinned = [numpy.median(numpy.sort(
+                valid = np.array([(len(Lm[binning == ii]) > 0)
+                               for ii in range(1, len(e[m]))])
+                Lmbinned = [np.median(np.sort(
                                 Lm[binning == ii+1])[-likesmooth:])
                             for ii, L in enumerate(valid) if L]
                 # normalized to the histogram area
-                Lmbinned = numpy.exp(Lmbinned)
+                Lmbinned = np.exp(Lmbinned)
                 Lmbinned -= Lmbinned.min()
                 Lmbinned /= Lmbinned.sum() / area
                 ax.plot(xo[valid], Lmbinned, '-',
@@ -433,24 +437,23 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     # lower off-diagonals
     axes_off = []
     # vertical axes
-    for i in xrange(1, ndim):
+    for i in range(1, ndim):
         # blank axes
         axes[0][i].axis('off')
-        for j in xrange(i+1, ndim):
+        for j in range(i+1, ndim):
             axes[i][j].axis('off')
         # horizontal axes
-        for j in xrange(i):
+        for j in range(i):
             ax = axes[i][j]
             axes_off.append(ax)
-            extent = numpy.append(plot_ranges[j], plot_ranges[i])
+            extent = np.append(plot_ranges[j], plot_ranges[i])
             for m, Xm in enumerate(X):
                 if contour_reference == 'likelihood':
                     ax.contour(Xm[j], Xm[i], likelihood, levels=clevels,
                                linewidths=1)
-                    continue
-                if contour_reference == 'samples':
-                    h = numpy.histogram2d(Xm[j], Xm[i], bins=bins[m][i])
-                    h, xe, ye = numpy.histogram2d(
+                elif contour_reference == 'samples':
+                    h = np.histogram2d(Xm[j], Xm[i], bins=bins[m][i])
+                    h, xe, ye = np.histogram2d(
                         Xm[j], Xm[i], bins=bins[m][i])
                     h = h.T
                     extent = (xe[0], xe[-1], ye[0], ye[-1])
@@ -465,19 +468,23 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                     else:
                         ax.plot(Xm[j], Xm[i], ',',
                                 color=bcolor, alpha=alpha, zorder=-10)
-                elif background == 'density':
-                    ax.imshow([Xm[i], Xm[j]], cmap=cm.Reds,
-                               extent=extent)
+                elif background.endswith('density'):
+                    h2d, xe, ye = np.histogram2d(Xm[i], Xm[j], bins=bins[m][i])
+                    if background == 'logdensity':
+                        h2d = np.log10(h2d)
+                    else:
+                        h2d[h2d == 0] = np.nan
+                    ax.imshow(h2d, origin='lower', extent=extent, aspect='auto')
                 elif background == 'filled':
                     lvs = contour_levels(Xm[j], Xm[i], bins=bins[m][i],
                                          levels=clevels)
-                    lvs = numpy.append(lvs[::-1], h.max())
+                    lvs = np.append(lvs[::-1], h.max())
                     try:
                         if hasattr(bcolor[0], '__iter__'):
                             bcolor = [bc for bc in bcolor]
                     except TypeError:
                         pass
-                    for l in xrange(len(levels), 0, -1):
+                    for l in range(len(levels), 0, -1):
                         if isinstance(bcolor[l-1][0], float) and \
                                 not hasattr(bcolor[l-1][0], '__iter__'):
                             bcolor[l-1] = [bcolor[l-1]]
@@ -514,7 +521,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                 ax.yaxis.set_major_locator(plt.MaxNLocator(3))
             for tick in ax.get_xticklabels():
                 tick.set_rotation(45)
-    if (len(X) == 1 and isinstance(names, basestring)) or \
+    if (len(X) == 1 and isinstance(names, six.string_types)) or \
             (hasattr(names, '__iter__') and len(names) == len(X)):
         fig.legend(model_lines, names, **names_kwargs)
     fig.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
