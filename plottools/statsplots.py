@@ -6,7 +6,14 @@ from itertools import count
 from matplotlib import cm, pyplot as plt
 import numpy as np
 from scipy import optimize
-from scipy.interpolate import spline
+try:
+    from scipy.interpolate import spline
+except ImportError:
+    import warnings
+    warnings.warn(
+        'scipy.iterpolate.spline has been replaced in the current' \
+        ' version. Some functionality not available in ``corner``' \
+        ' for the time being')
 from scipy.ndimage.filters import gaussian_filter
 import six
 import sys
@@ -201,6 +208,11 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                   off-diagonal) instances
 
     """
+    if style1d == 'curve':
+        warnings.warn('cannot use style1d=curve as spline interpolation has' \
+                      'been redesigned in scipy. Will update code soon. Style' \
+                      ' changed to "step".')
+        style1d = 'step'
     # not yet implemented
     #options = _load_corner_config(config)
     # the depth of an array or list. Useful to assess the proper format of
@@ -284,6 +296,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     for i, bname in enumerate(('bins','bins1d')):
         bi = np.array(meta_bins[i])
         bidepth = depth(bi)
+        print(bname, bi, bidepth)
         # will be the same message in all cases below
         msg = 'ERROR: number of {0} must equal either number'.format(bname)
         msg += ' of chains or number of parameters, or have shape'
@@ -299,7 +312,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             if len(bi) == ndim:
                 meta_bins[i] = ones * bi
             elif len(bi) == nchains:
-                meta_bins[i] = ones * bi[:,np.newaxis]
+                meta_bins[i] = ones * bi[:,None]
             else:
                 print(msg)
                 exit()
@@ -322,10 +335,9 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     else:
         if len(colors) == len(X):
             color1d = colors
-        # supports up to 12 names (plot would be way overcrowded!)
+        # supports up to 10 names (plot would be way overcrowded!)
         else:
-            color1d = ('g', 'orange', 'c', 'm', 'b', 'y',
-                       'g', 'orange', 'c', 'm', 'b', 'y')
+            color1d = ['C{0}'.format(i) for i in range(10)]
     if isinstance(ls1d, six.string_types):
         ls1d = [ls1d for i in X]
     if isinstance(ls2d, six.string_types):
@@ -461,7 +473,9 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                         h = gaussian_filter(h, (smooth[i],smooth[j]))
                     levels = contour_levels(Xm[j], Xm[i], bins=bins[m][i],
                                             levels=clevels)
-                if background == 'points':
+                if background is None:
+                    pass
+                elif background == 'points':
                     if not (cmap is None or bweight is None):
                         ax.scatter(Xm[j], Xm[i], c=bweight, marker='.',
                                    s=4, lw=0, cmap=cmap, zorder=-10)
@@ -474,7 +488,8 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                         h2d = np.log10(h2d)
                     else:
                         h2d[h2d == 0] = np.nan
-                    ax.imshow(h2d, origin='lower', extent=extent, aspect='auto')
+                    ax.imshow(h2d, origin='lower', cmap=bcolor, extent=extent,
+                              aspect='auto')
                 elif background == 'filled':
                     lvs = contour_levels(Xm[j], Xm[i], bins=bins[m][i],
                                          levels=clevels)

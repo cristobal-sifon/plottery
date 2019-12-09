@@ -3,10 +3,7 @@ from __future__ import (absolute_import, division, print_function)
 
 import os
 import re
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
+from setuptools import find_packages, setup
 
 # folder where pygmos is stored
 here = os.path.abspath(os.path.dirname(__file__))
@@ -34,6 +31,7 @@ def read(fname):
 
 
 
+
 setup(
     name='plottools',
     version=find_version('plottools/__init__.py'),
@@ -41,7 +39,14 @@ setup(
     author='Cristobal Sifon',
     author_email='sifon@astro.princeton.edu',
     long_description=read('README.md'),
+    long_description_content_type='text/markdown',
     url='https://github.com/cristobal-sifon/plottools',
-    packages=['plottools'],
-    zip_safe=False
+    #packages=['plottools'],
+    packages=find_packages(),
+    classifiers=[
+        'Development Status :: 5 - Production/Stable',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'Programming Language :: Python',
+        'Topic :: Scientific/Engineering :: Visualization',
+        ],
 )
