@@ -8,9 +8,6 @@ from matplotlib import (cm, colors as mplcolors, pyplot as plt,
 import six
 
 
-from . import colormaps
-
-
 def colorscale(array=None, vmin=None, vmax=None, n=0, cmap='viridis'):
     """
     Returns a set of colors and the associated colorscale, to be
@@ -28,11 +25,7 @@ def colorscale(array=None, vmin=None, vmax=None, n=0, cmap='viridis'):
         number of regular samples to draw in the range
         `[vmin,vmax]`. Ignored if `array` is defined.
     cmap : str or `matplotlib.colors.ListedColormap` instance
-        colormap to be used (or its name). New colormaps
-        (viridis, inferno, plasma, magma) can be used with
-        matplotlib<2.0 using the `colormaps` module included
-        in this repository; in those cases the names must be
-        given as string.
+        colormap to be used (or its name).
 
     Returns
     -------
@@ -57,12 +50,9 @@ def colorscale(array=None, vmin=None, vmax=None, n=0, cmap='viridis'):
     """
     # just in case
     assert n >= 0, 'Number `n` of samples must be >= 0'
-    # find colormap
+    # find colormap (I don't think this is necessary)
     if isinstance(cmap, six.string_types):
-        try:
-            cmap = getattr(cm, cmap)
-        except AttributeError:
-            cmap = getattr(colormaps, cmap)
+        cmap = getattr(cm, cmap)
     elif type(cmap) != mplcolors.ListedColormap:
         msg = 'argument cmap must be a string or' \
               ' a matplotlib.colors.ListedColormap instance'
