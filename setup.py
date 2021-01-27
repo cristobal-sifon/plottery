@@ -34,14 +34,15 @@ def read(fname):
 
 setup(
     name='plott',
-    version=find_version('plott/__init__.py'),
+    version=find_version('src/plott/__init__.py'),
     description='Custom plotting tools',
     author='Cristobal Sifon',
     author_email='cristobal.sifon@pucv.cl',
     long_description=read('README.md'),
     long_description_content_type='text/markdown',
     url='https://github.com/cristobal-sifon/plott',
-    packages=find_packages(),
+    packages=find_packages(where='src'),
+    package_dir={'': 'src'},
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
