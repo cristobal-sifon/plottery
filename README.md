@@ -1,11 +1,11 @@
 # plott
 (Not so) Generic plotting tools
 
-To install, download the latest release to somewhere in your python path from here:
+To install, run
 
-    https://github.com/cristobal-sifon/plott/releases
+    pip install plott
 
-or simply clone the latest version:
+or simply clone the latest version from github:
 
     git clone https://github.com/cristobal-sifon/plott.git
 
