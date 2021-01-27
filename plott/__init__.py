@@ -1,12 +1,12 @@
 """
 Custom plotting utilities
 
-(c) Cristobal Sifon 2013-2017
-    sifon@astro.princeton.edu
+(c) Cristobal Sifon 2013-2021
+    cristobal.sifon@pucv.cl
 
 """
 
 
 __all__ = ('astroplots', 'colormaps', 'plotutils', 'statsplots')
 __author__ = "Cristobal Sifon"
-__version__ = "0.4.7"
+__version__ = "0.5.0"

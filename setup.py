@@ -33,15 +33,14 @@ def read(fname):
 
 
 setup(
-    name='plottools',
-    version=find_version('plottools/__init__.py'),
+    name='plott',
+    version=find_version('plott/__init__.py'),
     description='Custom plotting tools',
     author='Cristobal Sifon',
-    author_email='sifon@astro.princeton.edu',
+    author_email='cristobal.sifon@pucv.cl',
     long_description=read('README.md'),
     long_description_content_type='text/markdown',
-    url='https://github.com/cristobal-sifon/plottools',
-    #packages=['plottools'],
+    url='https://github.com/cristobal-sifon/plott',
     packages=find_packages(),
     classifiers=[
         'Development Status :: 5 - Production/Stable',
