@@ -295,7 +295,6 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     for i, bname in enumerate(('bins','bins1d')):
         bi = np.array(meta_bins[i])
         bidepth = depth(bi)
-        print(bname, bi, bidepth)
         # will be the same message in all cases below
         msg = 'ERROR: number of {0} must equal either number'.format(bname)
         msg += ' of chains or number of parameters, or have shape'
@@ -378,7 +377,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             else:
                 n, e, patches = ax.hist(
                     Xm[i], bins=bins1d[m][i], histtype=histtype,
-                    color=color1d[m], normed=True)
+                    color=color1d[m], weights=np.ones(Xm[i].size)/Xm[i].sum())
             edges[-1].append(e)
             if n.max() > peak:
                 peak = n.max()
