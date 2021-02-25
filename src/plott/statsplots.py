@@ -214,11 +214,8 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
         style1d = 'step'
     # not yet implemented
     #options = _load_corner_config(config)
-    # the depth of an array or list. Useful to assess the proper format of
-    # arguments. Returns zero if scalar.
-    depth = lambda L: len(np.array(L).shape)
     #nchains = (len(X)-1 if depth(X) > 1 else 1)
-    nchains = max(depth(X)-1, 1)
+    nchains = max(_depth(X)-1, 1)
     if nchains > 1:
         ndim = len(X[0])
         nsamples = len(X[0][0])
@@ -290,41 +287,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     except TypeError:
         if smooth not in (False, None):
             smooth = [smooth for i in X[0]]
-    # check the binning scheme.
-    meta_bins = [bins, bins1d]
-    for i, bname in enumerate(('bins','bins1d')):
-        bi = np.array(meta_bins[i])
-        bidepth = depth(bi)
-        # will be the same message in all cases below
-        msg = 'ERROR: number of {0} must equal either number'.format(bname)
-        msg += ' of chains or number of parameters, or have shape'
-        msg += ' (nchains,nparams)'
-        # this means binning will be the same for all chains
-        ones = np.ones((nchains,ndim))
-        # is it a scalar?
-        if bidepth == 0:
-            meta_bins[i] = bi.T * ones
-        # or a 1d list?
-        elif bidepth == 1:
-            bi = np.array(bi)
-            if len(bi) == ndim:
-                meta_bins[i] = ones * bi
-            elif len(bi) == nchains:
-                meta_bins[i] = ones * bi[:,None]
-            else:
-                print(msg)
-                exit()
-        elif (bidepth == 2 and nchains > 1 and \
-              np.array(bi).shape != ones.shape) or \
-             bidepth > 2:
-            print(msg)
-            exit()
-    # adjusted to the required shape (and type)
-    bins, bins1d = meta_bins
-    if isinstance(bins[0][0], float):
-        bins = np.array(bins, dtype=int)
-    if isinstance(bins1d[0][0], float):
-        bins1d = np.array(bins1d, dtype=int)
+    bins, bins1d = _binning(bins, bins1d, nchains, ndim, limits)
     if len(X) == 1:
         if isinstance(colors, six.string_types):
             color1d = colors
@@ -365,9 +328,14 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
         peak = 0
         edges = []
         for m, Xm in enumerate(X):
+            if limits is None:
+                Xm_i = Xm[i]
+            else:
+                mask = (Xm[i] >= limits[i][0]) & (Xm[i] <= limits[i][1])
+                Xm_i = Xm[i][mask]
             edges.append([])
             if style1d == 'curve':
-                ho, e = np.histogram(Xm[i], bins=bins1d[m][i], normed=True)
+                ho, e = np.histogram(Xm_i_, bins=bins1d[m][i], normed=True)
                 xo = 0.5 * (e[1:] + e[:-1])
                 xn = np.linspace(xo.min(), xo.max(), 500)
                 n = spline(xo, ho, xn)
@@ -376,14 +344,14 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                     model_lines.append(line)
             else:
                 n, e, patches = ax.hist(
-                    Xm[i], bins=bins1d[m][i], histtype=histtype,
-                    color=color1d[m], weights=np.ones(Xm[i].size)/Xm[i].sum())
+                    Xm_i, bins=bins1d[m][i], histtype=histtype,
+                    color=color1d[m], weights=np.ones(Xm_i.size)/Xm_i.sum())
             edges[-1].append(e)
             if n.max() > peak:
                 peak = n.max()
             area = n.sum()
             if medians1d:
-                ax.axvline(np.median(Xm[i]), ls='-', color=color1d[m])
+                ax.axvline(np.median(Xm_i), ls='-', color=color1d[m])
             if verbose:
                 if len(names) == len(X):
                     print('names[{0}] = {1}'.format(m, names[m]))
@@ -393,10 +361,10 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                         print('')
                     else:
                         print('(truth: {0})'.format(truths[i]))
-                    print('    p50.0  {0:.3f}'.format(np.median(Xm[i])))
+                    print('    p50.0  {0:.3f}'.format(np.median(Xm_i)))
             for p, ls in zip(clevels, axvls):
-                v = [np.percentile(Xm[i], 100*(1-p)/2.),
-                     np.percentile(Xm[i], 100*(1+p)/2.)]
+                v = [np.percentile(Xm_i, 100*(1-p)/2.),
+                     np.percentile(Xm_i, 100*(1+p)/2.)]
                 if percentiles1d:
                     ax.axvline(v[0], ls=ls, color=color1d[m])
                     ax.axvline(v[1], ls=ls, color=color1d[m])
@@ -404,7 +372,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                     print('    p%.1f  %.3f  %.3f' %(100*p, v[0], v[1]))
         if likelihood is not None:
             for m, Xm, Lm, e in zip(count(), X, likelihood, edges):
-                binning = np.digitize(Xm[i], e[m])
+                binning = np.digitize(Xm_i, e[m])
                 xo = 0.5 * (e[m][1:] + e[m][:-1])
                 # there can be nan's because some bins have no data
                 valid = np.array([(len(Lm[binning == ii]) > 0)
@@ -458,30 +426,39 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             axes_off.append(ax)
             extent = np.append(plot_ranges[j], plot_ranges[i])
             for m, Xm in enumerate(X):
+                if limits is not None:
+                    mask_ij = \
+                        (Xm[j] >= limits[j][0]) & (Xm[j] <= limits[j][1]) \
+                        & (Xm[i] >= limits[i][0]) & (Xm[i] <= limits[i][1])
+                    Xm_i = Xm[i][mask_ij]
+                    Xm_j = Xm[j][mask_ij]
+                else:
+                    Xm_i = Xm[i]
+                    Xm_j = Xm[j]
                 if contour_reference == 'likelihood':
-                    ax.contour(Xm[j], Xm[i], likelihood, levels=clevels,
-                               linewidths=1)
+                    ax.contour(
+                        Xm_j, Xm_i, likelihood, levels=clevels, linewidths=1)
                 elif contour_reference == 'samples':
-                    h = np.histogram2d(Xm[j], Xm[i], bins=bins[m][i])
-                    h, xe, ye = np.histogram2d(
-                        Xm[j], Xm[i], bins=bins[m][i])
+                    h = np.histogram2d(Xm_j, Xm_i, bins=bins[m][i])
+                    h, xe, ye = np.histogram2d(Xm_j, Xm_i, bins=bins[m][i])
                     h = h.T
                     extent = (xe[0], xe[-1], ye[0], ye[-1])
                     if smooth not in (False, None):
                         h = gaussian_filter(h, (smooth[i],smooth[j]))
-                    levels = contour_levels(Xm[j], Xm[i], bins=bins[m][i],
-                                            levels=clevels)
+                    levels = contour_levels(
+                        Xm_j, Xm_i, bins=bins[m][i], levels=clevels)
                 if background is None:
                     pass
                 elif background == 'points':
                     if not (cmap is None or bweight is None):
-                        ax.scatter(Xm[j], Xm[i], c=bweight, marker='.',
+                        ax.scatter(Xm_j, Xm_i, c=bweight, marker='.',
                                    s=4, lw=0, cmap=cmap, zorder=-10)
                     else:
-                        ax.plot(Xm[j], Xm[i], ',',
-                                color=bcolor, alpha=alpha, zorder=-10)
+                        ax.plot(
+                            Xm_j, Xm_i, ',', color=bcolor, alpha=alpha,
+                            zorder=-10)
                 elif background.endswith('density'):
-                    h2d, xe, ye = np.histogram2d(Xm[i], Xm[j], bins=bins[m][i])
+                    h2d, xe, ye = np.histogram2d(Xm_i, Xm_j, bins=bins[m][i])
                     if background == 'logdensity':
                         h2d = np.log10(h2d)
                     else:
@@ -489,7 +466,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                     ax.imshow(h2d, origin='lower', cmap=bcolor, extent=extent,
                               aspect='auto')
                 elif background == 'filled':
-                    lvs = contour_levels(Xm[j], Xm[i], bins=bins[m][i],
+                    lvs = contour_levels(Xm_j, Xm_i, bins=bins[m][i],
                                          levels=clevels)
                     lvs = np.append(lvs[::-1], h.max())
                     try:
@@ -543,4 +520,47 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
         plt.close()
     return fig, axes_diagonal, axes_off
 
+
+def _binning(bins, bins1d, nchains, ndim, limits):
+    # check the binning scheme.
+    meta_bins = [bins, bins1d]
+    for i, bname in enumerate(('bins','bins1d')):
+        bi = np.array(meta_bins[i])
+        bidepth = _depth(bi)
+        # will be the same message in all cases below
+        msg = f'{bname} must correspond either to the number' \
+              ' of chains or number of parameters, or have shape' \
+              ' (nchains,nparams)'
+        if bidepth > 2:
+            raise ValueError(f'iterable too deep; {msg}')
+        # this means binning will be the same for all chains
+        ones = np.ones((nchains,ndim), dtype=int)
+        # is it a scalar?
+        if bidepth == 0:
+            meta_bins[i] = bi.T * ones
+        # or a 1d list?
+        elif bidepth == 1:
+            bi = np.array(bi)
+            if len(bi) == ndim:
+                meta_bins[i] = ones * bi
+            elif len(bi) == nchains:
+                meta_bins[i] = ones * bi[:,None]
+            else:
+                raise ValueError(msg)
+        elif (bidepth == 2 and nchains > 1 and \
+              np.array(bi).shape != ones.shape) or \
+             bidepth > 2:
+            raise ValueError(msg)
+    # adjusted to the required shape (and type)
+    bins, bins1d = meta_bins
+    return bins, bins1d
+
+
+def _depth(L):
+    """the depth of an array or list
+
+    Useful to assess the proper format of arguments. Returns zero if
+    scalar.
+    """
+    return len(np.array(L).shape)
 
