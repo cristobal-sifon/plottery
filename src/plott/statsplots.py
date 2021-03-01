@@ -5,14 +5,7 @@ from itertools import count
 from matplotlib import cm, pyplot as plt
 import numpy as np
 from scipy import optimize
-try:
-    from scipy.interpolate import spline
-except ImportError:
-    import warnings
-    warnings.warn(
-        'scipy.iterpolate.spline has been replaced in the current' \
-        ' version. Some functionality not available in ``corner``' \
-        ' for the time being')
+from scipy.interpolate import interp1d
 from scipy.ndimage.filters import gaussian_filter
 import six
 import sys
@@ -78,7 +71,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
            percentiles1d=True, background=None, bweight=None, bcolor='r',
            alpha=0.5, limits=None, show_likelihood_1d=False,
            ticks=None, show_contour=True, top_labels=False,
-           pad=1, h_pad=0.1, w_pad=0.1, output='', verbose=False,
+           pad=1, h_pad=0.1, w_pad=0.02, output='', verbose=False,
            names_kwargs={}, **kwargs):
     """
     Do a corner plot (e.g., with the posterior parameters of an MCMC chain).
@@ -207,11 +200,6 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                   off-diagonal) instances
 
     """
-    if style1d == 'curve':
-        warnings.warn('cannot use style1d=curve as spline interpolation has' \
-                      'been redesigned in scipy. Will update code soon. Style' \
-                      ' changed to "step".')
-        style1d = 'step'
     # not yet implemented
     #options = _load_corner_config(config)
     #nchains = (len(X)-1 if depth(X) > 1 else 1)
@@ -314,7 +302,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     # all set!
     axvls = ('--', ':', '-.')
     fig, axes = plt.subplots(
-        figsize=(2*ndim+1,2*ndim+1), ncols=ndim, nrows=ndim)
+        ndim, ndim, figsize=(2*ndim+1,2*ndim+1))
     # diagonals first
     plot_ranges = []
     axes_diagonal = []
@@ -335,10 +323,11 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                 Xm_i = Xm[i][mask]
             edges.append([])
             if style1d == 'curve':
-                ho, e = np.histogram(Xm_i_, bins=bins1d[m][i], normed=True)
+                ho, e = np.histogram(Xm_i, bins=bins1d[m][i], normed=True)
                 xo = 0.5 * (e[1:] + e[:-1])
+                fx = interp1d(xo, ho)
                 xn = np.linspace(xo.min(), xo.max(), 500)
-                n = spline(xo, ho, xn)
+                n = fx(xn)
                 line, = ax.plot(xn, n, ls=ls1d[m], color=color1d[m])
                 if i == 0:
                     model_lines.append(line)
