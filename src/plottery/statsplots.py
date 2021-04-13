@@ -302,8 +302,9 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     # all set!
     axvls = ('--', ':', '-.')
     fig, axes = plt.subplots(
-        ndim, ndim, figsize=(2*ndim+1,2*ndim+1))
-    # diagonals first
+        ndim, ndim, figsize=(2*ndim+1,2*ndim+1))#, sharex=True, sharey=True)
+
+    # diagonals
     plot_ranges = []
     axes_diagonal = []
     # to generate model legend
@@ -321,11 +322,12 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             else:
                 mask = (Xm[i] >= limits[i][0]) & (Xm[i] <= limits[i][1])
                 Xm_i = Xm[i][mask]
+            xlim = (Xm_i.min(), Xm_i.max())
             edges.append([])
             if style1d == 'curve':
-                ho, e = np.histogram(Xm_i, bins=bins1d[m][i], normed=True)
+                ho, e = np.histogram(Xm_i, bins=bins1d[m][i])
                 xo = 0.5 * (e[1:] + e[:-1])
-                fx = interp1d(xo, ho)
+                fx = interp1d(xo, xlim[0] + (xlim[1]-xlim[0])*ho)
                 xn = np.linspace(xo.min(), xo.max(), 500)
                 n = fx(xn)
                 line, = ax.plot(xn, n, ls=ls1d[m], color=color1d[m])
@@ -405,7 +407,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     axes_off = []
     # vertical axes
     for i in range(1, ndim):
-        # blank axes
+        # empty axes at the top-right
         axes[0][i].axis('off')
         for j in range(i+1, ndim):
             axes[i][j].axis('off')
@@ -489,8 +491,8 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                 ax.set_yticklabels([])
             if i < ndim - 1:
                 ax.set_xticklabels([])
-            ax.set_xlim(*plot_ranges[j])
-            ax.set_ylim(*plot_ranges[i])
+            #ax.set_xlim(*plot_ranges[j])
+            #ax.set_ylim(*plot_ranges[i])
             if ticks is not None:
                 ax.set_xticks(ticks[j])
                 ax.set_yticks(ticks[i])
@@ -500,6 +502,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                 ax.yaxis.set_major_locator(plt.MaxNLocator(3))
             for tick in ax.get_xticklabels():
                 tick.set_rotation(45)
+
     if (len(X) == 1 and isinstance(names, six.string_types)) or \
             (hasattr(names, '__iter__') and len(names) == len(X)):
         fig.legend(model_lines, names, **names_kwargs)

@@ -33,14 +33,14 @@ def read(fname):
 
 
 setup(
-    name='plott',
-    version=find_version('src/plott/__init__.py'),
+    name='plottery',
+    version=find_version('src/plottery/__init__.py'),
     description='Custom plotting tools',
     author='Cristobal Sifon',
     author_email='cristobal.sifon@pucv.cl',
     long_description=read('README.md'),
     long_description_content_type='text/markdown',
-    url='https://github.com/cristobal-sifon/plott',
+    url='https://github.com/cristobal-sifon/plottery',
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     classifiers=[

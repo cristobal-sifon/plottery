@@ -1,18 +1,16 @@
-# plott
+# plottery
 (Not so) Generic plotting tools
 
 To install, run
 
-    pip install plott
+    pip install plottery
 
 or simply clone the latest version from github:
 
-    git clone https://github.com/cristobal-sifon/plott.git
+    git clone https://github.com/cristobal-sifon/plottery.git
 
 The `plott` package contains four modules, `astroplots`, `patches`, `plotutils`, 
-and `statsplots`, in addition to `colormaps`, which includes the new 
-`matplotlib` colors, and was written by Nathaniel J. Smith, Stefan van der Walt, 
-and (in the case of viridis) Eric Firing. See https://github.com/BIDS/colormap.
+and `statsplots`
 
 Below is a brief description of each module's functions. See their help pages for more details.
 
@@ -32,6 +30,6 @@ Below is a brief description of each module's functions. See their help pages fo
         corner -- Make a corner plot.
 
 ---
-*Last updated: Jan 2021*
+*Last updated: Apr 2021*
 
 *(c) Cristóbal Sifón 2013-2021*
