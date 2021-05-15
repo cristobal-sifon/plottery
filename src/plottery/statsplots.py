@@ -63,7 +63,7 @@ def contour_levels(x, y=[], bins=10, levels=(0.68,0.95)):
 
 
 def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
-           clevels=(0.68,0.95), contour_reference='samples',
+           clevels=(0.68,0.95), contour_reference='samples', blind=False,
            truths=None, truths_in_1d=False, truth_color='r',
            smooth=False, likelihood=None, likesmooth=1,
            color_likelihood='r', colors='k', cmap=None,
@@ -72,7 +72,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
            alpha=0.5, limits=None, show_likelihood_1d=False,
            ticks=None, show_contour=True, top_labels=False,
            pad=1, h_pad=0.1, w_pad=0.02, output='', verbose=False,
-           names_kwargs={}, **kwargs):
+           names_kwargs={}, contour_kwargs={}):
     """
     Do a corner plot (e.g., with the posterior parameters of an MCMC chain).
     Note that there may still be some issues with the tick labels.
@@ -122,6 +122,8 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                   on likelihood levels. In the former case, *clevels*
                   must be floats between 0 and 1; in the latter, the
                   levels of the chi2. ONLY 'samples' IMPLEMENTED SO FAR
+      blind     : bool
+                  if ``True``, all tick labels will be hidden
       truths    : one of {list of floats, 'medians', None}
                   reference values for each parameter, to be shown in
                   each panel
@@ -191,7 +193,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                       * 'frameon': False
                       * 'bbox_to_anchor': (0.95,0.95)
                       * 'bbox_transform': plt.gcf().transFigure
-      kwargs    : keyword arguments to be passed to plt.contour()
+      contour_kwargs : keyword arguments to be passed to plt.contour()
 
 
     Returns
@@ -384,18 +386,21 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             if len(labels) >= ndim:
                 ax.set_xlabel(labels[i])
         ax.set_yticks([])
-        # to avoid overcrowding tick labels
-        if ticks is None:
-            tickloc = plt.MaxNLocator(3)
-            ax.xaxis.set_major_locator(tickloc)
+        if blind:
+            ax.set(xticks=[], yticks=[])
         else:
-            ax.set_xticks(ticks[i])
-        plt.xticks(rotation=45)
-        if limits is not None:
-            ax.set_xlim(*limits[i])
-        ax.set_ylim(0, 1.1*peak)
-        if i != ndim-1:
-            ax.set_xticklabels([])
+            # to avoid overcrowding tick labels
+            if ticks is None:
+                tickloc = plt.MaxNLocator(3)
+                ax.xaxis.set_major_locator(tickloc)
+            else:
+                ax.set_xticks(ticks[i])
+            plt.xticks(rotation=45)
+            if limits is not None:
+                ax.set_xlim(*limits[i])
+            ax.set_ylim(0, 1.1*peak)
+            if i != ndim-1:
+                ax.set_xticklabels([])
         if top_labels:
             topax = ax.twiny()
             topax.set_xlim(*ax.get_xlim())
@@ -475,7 +480,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                 if show_contour:
                     ax.contour(h, levels[::-1], colors=color1d[m],
                                linestyles=ls2d[m], extent=extent,
-                               zorder=10, **kwargs)
+                               zorder=10, **contour_kwargs)
                 if truths is not None:
                     #plt.axvline(truths[j], ls='-', color=(0,0.5,1))
                     #plt.axhline(truths[i], ls='-', color=(0,0.5,1))
@@ -487,21 +492,24 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                         ax.set_ylabel(labels[i])
                     if i == ndim - 1:
                         ax.set_xlabel(labels[j])
-            if j > 0:
-                ax.set_yticklabels([])
-            if i < ndim - 1:
-                ax.set_xticklabels([])
-            #ax.set_xlim(*plot_ranges[j])
-            #ax.set_ylim(*plot_ranges[i])
-            if ticks is not None:
-                ax.set_xticks(ticks[j])
-                ax.set_yticks(ticks[i])
+            if blind:
+                ax.set(xticks=[], yticks=[])
             else:
-                # to avoid overcrowding tick labels
-                ax.xaxis.set_major_locator(plt.MaxNLocator(3))
-                ax.yaxis.set_major_locator(plt.MaxNLocator(3))
-            for tick in ax.get_xticklabels():
-                tick.set_rotation(45)
+                if j > 0:
+                    ax.set_yticklabels([])
+                if i < ndim - 1:
+                    ax.set_xticklabels([])
+                #ax.set_xlim(*plot_ranges[j])
+                #ax.set_ylim(*plot_ranges[i])
+                if ticks is not None:
+                    ax.set_xticks(ticks[j])
+                    ax.set_yticks(ticks[i])
+                else:
+                    # to avoid overcrowding tick labels
+                    ax.xaxis.set_major_locator(plt.MaxNLocator(3))
+                    ax.yaxis.set_major_locator(plt.MaxNLocator(3))
+                for tick in ax.get_xticklabels():
+                    tick.set_rotation(45)
 
     if (len(X) == 1 and isinstance(names, six.string_types)) or \
             (hasattr(names, '__iter__') and len(names) == len(X)):
