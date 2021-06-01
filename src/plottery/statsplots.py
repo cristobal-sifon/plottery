@@ -204,8 +204,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
     """
     # not yet implemented
     #options = _load_corner_config(config)
-    #nchains = (len(X)-1 if depth(X) > 1 else 1)
-    nchains = max(_depth(X)-1, 1)
+    nchains = (len(X) if _depth(X) > 2 else 1)
     if nchains > 1:
         ndim = len(X[0])
         nsamples = len(X[0][0])
@@ -547,9 +546,9 @@ def _binning(bins, bins1d, nchains, ndim, limits):
                 meta_bins[i] = ones * bi[:,None]
             else:
                 raise ValueError(msg)
-        elif (bidepth == 2 and nchains > 1 and \
-              np.array(bi).shape != ones.shape) or \
-             bidepth > 2:
+        elif (bidepth == 2 and nchains > 1 \
+                    and np.array(bi).shape != ones.shape) \
+                or bidepth > 2:
             raise ValueError(msg)
     # adjusted to the required shape (and type)
     bins, bins1d = meta_bins
