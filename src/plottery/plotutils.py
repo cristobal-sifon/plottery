@@ -8,7 +8,8 @@ from matplotlib import (cm, colors as mplcolors, pyplot as plt,
 import six
 
 
-def colorscale(array=None, vmin=None, vmax=None, n=0, cmap='viridis'):
+def colorscale(array=None, vmin=None, vmax=None, n=0, log=False,
+               cmap='viridis'):
     """
     Returns a set of colors and the associated colorscale, to be
     passed to `plt.colorbar()`
@@ -24,6 +25,8 @@ def colorscale(array=None, vmin=None, vmax=None, n=0, cmap='viridis'):
     n : int
         number of regular samples to draw in the range
         `[vmin,vmax]`. Ignored if `array` is defined.
+    log : bool
+        whether the colorscale should be drawn from logspace samples
     cmap : str or `matplotlib.colors.ListedColormap` instance
         colormap to be used (or its name).
 
@@ -73,7 +76,10 @@ def colorscale(array=None, vmin=None, vmax=None, n=0, cmap='viridis'):
     assert vmin < vmax, 'Please ensure `vmin < vmax`'
 
     # define normalization for colormap
-    cnorm = mplcolors.Normalize(vmin=vmin, vmax=vmax)
+    if log:
+        cnorm = mplcolors.LogNorm(vmin=vmin, vmax=vmax)
+    else:
+        cnorm = mplcolors.Normalize(vmin=vmin, vmax=vmax)
     colorbar = cm.ScalarMappable(norm=cnorm, cmap=cmap)
     # this is necessary for the colorbar to be interpreted by
     # plt.colorbar()
@@ -82,7 +88,10 @@ def colorscale(array=None, vmin=None, vmax=None, n=0, cmap='viridis'):
         return colorbar
     # now get the colors
     if array is None:
-        array = np.linspace(vmin, vmax, n)
+        if log:
+            array = np.logspace(np.log10(vmin), np.logspace(vmax), n)
+        else:
+            array = np.linspace(vmin, vmax, n)
     colors = colorbar.to_rgba(array)
     return colors, colorbar
 
