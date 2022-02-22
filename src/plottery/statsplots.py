@@ -87,21 +87,6 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
 
     Optional parameters
     -------------------
-      config    : str (optional - NOT YET IMPLEMENTED)
-                  name of file containing any parameters whose default values
-                  should be modified. Format of the file is two columns,
-                  where the first is the parameter name as listed here,
-                  and the second is the value for that parameter. If the
-                  parameter takes a list of values they should be comma-
-                  separated, and multiple entries semi-colon-separated.
-                  For example, a file containing
-                        bins             20
-                        bins1d           50
-                        colors       yellow
-                        ticks     2,3,4;10,11,12;3.2,3.3,3.4
-                  would only modify these parameters. Note that because of the
-                  content of the 'ticks' parameter, the chain must be a
-                  three-parameter model.
       names     : list of strings
                   Names for each of the chains. Will be used to show a legend
                   in the (empty) upper corner
@@ -117,7 +102,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                   parameter, or have shape (nchains,nparams)
       clevels   : list of floats between 0 and 1
                   percentiles at which to show contours
-      contour_reference : one of {'samples', 'chi2'}
+      contour_reference : ('samples', 'chi2')
                   whether to draw contour on fractions of samples or
                   on likelihood levels. In the former case, *clevels*
                   must be floats between 0 and 1; in the latter, the
@@ -144,24 +129,24 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
       colors    : any argument taken by the *colors* argument of
                   plt.contour(), or a tuple of them if more than one
                   model is to be plotted
-      ls1d      : one of {'solid','dashed','dashdot','dotted'}
+      ls1d      : ('solid', 'dashed', 'dashdot', 'dotted')
                   linestyle for the diagonal plots, if style1d=='curve'.
                   Can specify more than one value as a list if more than one
                   model is being plotted.
-      ls2d      : one of {'solid','dashed','dashdot','dotted'}
+      ls2d      : ('solid', 'dashed', 'dashdot', 'dotted')
                   linestyle for the contours. Can specify more than one value
                   as a list if more than one model is being plotted.
-      style1d   : one of {'bar', 'step', 'stepfilled', 'curve'}
-                  if 'curve', plot the 1d posterior as a curve; else this
-                  parameter is passed to the 'histtype' argument in
-                  pyplot.hist()
+      style1d   : ('bar', 'step', 'stepfilled', 'curve', 'smooth')
+                  if 'curve' or 'smooth', plot the 1d posterior as a
+                  curve; else this parameter is passed to the 'histtype'
+                  argument in pyplot.hist()
       medians1d : bool
                   whether to show the medians in the diagonal panels as
                   vertical lines
       percentiles1d : bool
                   whether to show selected percentiles (see *clevels*) in the
                   diagonal panels as vertical lines
-      background : one of {None, 'points', 'density', 'logdensity', 'filled'}
+      background : (None, 'points', 'density', 'logdensity', 'filled')
                   If not None, then either points, a smoothed 2d histogram,
                   or filled contours are plotted beneath contours.
       bweight   : array-like, same length as e.g., A1
@@ -325,10 +310,12 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                 Xm_i = Xm[i][mask]
             xlim = (Xm_i.min(), Xm_i.max())
             edges.append([])
-            if style1d == 'curve':
+            if style1d in ('curve', 'smooth'):
                 ho, e = np.histogram(Xm_i, bins=bins1d[m][i])
                 xo = 0.5 * (e[1:] + e[:-1])
-                fx = interp1d(xo, xlim[0] + (xlim[1]-xlim[0])*ho)
+                kind = 'slinear' if style1d == 'curve' else 'cubic'
+                fx = interp1d(
+                    xo, xlim[0] + (xlim[1]-xlim[0])*ho, kind=kind)
                 xn = np.linspace(xo.min(), xo.max(), 500)
                 n = fx(xn)
                 line, = ax.plot(xn, n, ls=ls1d[m], color=color1d[m])
@@ -562,4 +549,3 @@ def _depth(L):
     scalar.
     """
     return len(np.array(L).shape)
-
