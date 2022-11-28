@@ -30,6 +30,9 @@ def read(fname):
     return open(os.path.join(here, fname)).read()
 
 
+def read_requirements(reqfile):
+    return [i for i in open(reqfile).read().split('\n') if i]
+
 
 
 setup(
@@ -43,6 +46,7 @@ setup(
     url='https://github.com/cristobal-sifon/plottery',
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
+    install_requires=read_requirements('requirements.txt'),
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',

@@ -1,0 +1,5 @@
+astLib>=0.09
+astropy>=4.0
+matplotlib>=3.0
+numpy>=1.0
+scipy>=1.0
