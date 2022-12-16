@@ -65,11 +65,11 @@ def contour_levels(x, y=[], bins=10, levels=(0.68,0.95)):
 def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
            clevels=(0.68,0.95), contour_reference='samples', blind=False,
            truths=None, truths_in_1d=False, truth_color='r',
-           smooth=False, likelihood=None, likesmooth=1,
+           smooth=False, lnlike=None, likesmooth=1,
            color_likelihood='r', colors='k', cmap=None,
            ls1d='-', ls2d='solid', style1d='curve', medians1d=True,
            percentiles1d=True, background=None, bweight=None, bcolor='r',
-           alpha=0.5, limits=None, show_likelihood_1d=False,
+           alpha=0.5, limits=None, show_likelihood_1d=True,
            ticks=None, show_contour=True, top_labels=False,
            pad=1, h_pad=0.1, w_pad=0.02, output='', verbose=False,
            names_kwargs={}, contour_kwargs={}):
@@ -116,7 +116,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                   the width of the gaussian with which to smooth the
                   contours in the off-diagonal panels. If no value is given,
                   the contours are not smoothed.
-      likelihood : array of floats
+      lnlike    : array of floats
                   the likelihood surface, to be shown as a histogram in the
                   diagonals or to be used to define the 2d contours. If
                   contour_reference=='chi2' then provide the chi2 here
@@ -199,8 +199,6 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
         ndim = len(X)
         nsamples = len(X[0])
         X = (X,)
-        if likelihood is not None:
-            likelihood = (likelihood,)
     if nsamples == 0:
         msg = 'plottools.corner: received empty array.'
         msg += ' It is possible that you set the burn-in to be longer'
@@ -219,15 +217,11 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                   ' number of parameters')
             limits = None
     # check likelihood
-    if likelihood is not None and show_likelihood_1d:
-        msg = 'WARNING: likelihood format not right - ignoring'
-        lshape = likelihood.shape
-        if len(lshape) == 1:
-            likelihood = [likelihood]
-        if lshape[0] != nchains or lshape[1] != nsamples \
-                or len(lshape) != 2:
-            print(msg)
-            likelihood = None
+    if lnlike is not None and show_likelihood_1d:
+        if _depth(lnlike) == 1:
+            lnlike = np.squeeze(lnlike)[None]
+        else:
+            assert len(lnlike) == nchains
     # what to show in the off-diagonals
     assert contour_reference in (None, 'likelihood', 'samples')
 
@@ -349,8 +343,8 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                     ax.axvline(v[1], ls=ls, color=color1d[m])
                 if verbose:
                     print('    p%.1f  %.3f  %.3f' %(100*p, v[0], v[1]))
-        if likelihood is not None:
-            for m, Xm, Lm, e in zip(count(), X, likelihood, edges):
+        if lnlike is not None:
+            for m, Xm, Lm, e in zip(count(), X, lnlike, edges):
                 binning = np.digitize(Xm_i, e[m])
                 xo = 0.5 * (e[m][1:] + e[m][:-1])
                 # there can be nan's because some bins have no data
