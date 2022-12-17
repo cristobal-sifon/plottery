@@ -318,7 +318,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
             else:
                 n, e, patches = ax.hist(
                     Xm_i, bins=bins1d[m][i], histtype=histtype,
-                    color=color1d[m], weights=np.ones(Xm_i.size)/Xm_i.sum())
+                    color=color1d[m], density=True)#weights=np.ones(Xm_i.size)/Xm_i.sum())
             edges[-1].append(e)
             if n.max() > peak:
                 peak = n.max()
@@ -327,14 +327,14 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                 ax.axvline(np.median(Xm_i), ls='-', color=color1d[m])
             if verbose:
                 if len(names) == len(X):
-                    print('names[{0}] = {1}'.format(m, names[m]))
+                    print(f'names[{m}] = {names[m]}')
                 if labels is not None:
-                    print('  {0}'.format(labels[i]), end=' ')
+                    print(f'  {labels[i]}', end=' ')
                     if truths is None:
                         print('')
                     else:
-                        print('(truth: {0})'.format(truths[i]))
-                    print('    p50.0  {0:.3f}'.format(np.median(Xm_i)))
+                        print(f'(truth: {truths[i]})')
+                    print(f'    p50.0  {np.median(Xm_i):.3f}')
             for p, ls in zip(clevels, axvls):
                 v = [np.percentile(Xm_i, 100*(1-p)/2.),
                      np.percentile(Xm_i, 100*(1+p)/2.)]
@@ -342,7 +342,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                     ax.axvline(v[0], ls=ls, color=color1d[m])
                     ax.axvline(v[1], ls=ls, color=color1d[m])
                 if verbose:
-                    print('    p%.1f  %.3f  %.3f' %(100*p, v[0], v[1]))
+                    print(f'    p{100*p:.1f} {v[0]:.3f}  {v[1]:.3f}')
         if lnlike is not None:
             for m, Xm, Lm, e in zip(count(), X, lnlike, edges):
                 binning = np.digitize(Xm_i, e[m])
@@ -413,7 +413,7 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                     Xm_j = Xm[j]
                 if contour_reference == 'likelihood':
                     ax.contour(
-                        Xm_j, Xm_i, likelihood, levels=clevels, linewidths=1)
+                        Xm_j, Xm_i, lnlike, levels=clevels, linewidths=1)
                 elif contour_reference == 'samples':
                     h = np.histogram2d(Xm_j, Xm_i, bins=bins[m][i])
                     h, xe, ye = np.histogram2d(Xm_j, Xm_i, bins=bins[m][i])
@@ -455,15 +455,12 @@ def corner(X, config=None, names='', labels=None, bins=20, bins1d=20,
                                 not hasattr(bcolor[l-1][0], '__iter__'):
                             bcolor[l-1] = [bcolor[l-1]]
                         ax.contourf(h, (lvs[l-1],lvs[l]),
-                        #ax.contourf(h, (lvs[l],lvs[l-1]),
                                     extent=extent, colors=bcolor[l-1])
                 if show_contour:
                     ax.contour(h, levels[::-1], colors=color1d[m],
                                linestyles=ls2d[m], extent=extent,
                                zorder=10, **contour_kwargs)
                 if truths is not None:
-                    #plt.axvline(truths[j], ls='-', color=(0,0.5,1))
-                    #plt.axhline(truths[i], ls='-', color=(0,0.5,1))
                     ax.plot(truths[j], truths[i], '+',
                             color=truth_color, mew=4, ms=12, zorder=10)
             if labels is not None:
@@ -512,12 +509,15 @@ def _binning(bins, bins1d, nchains, ndim, limits):
               ' of chains or number of parameters, or have shape' \
               ' (nchains,nparams)'
         if bidepth > 2:
-            raise ValueError(f'iterable too deep; {msg}')
+            raise ValueError(f'iterable too deep: {msg}')
         # this means binning will be the same for all chains
         ones = np.ones((nchains,ndim), dtype=int)
         # is it a scalar?
         if bidepth == 0:
-            meta_bins[i] = bi.T * ones
+            if isinstance(meta_bins[i], str):
+                meta_bins[i] = nchains * [[meta_bins[i] for j in range(ndim)]]
+            else:
+                meta_bins[i] = bi.T * ones
         # or a 1d list?
         elif bidepth == 1:
             bi = np.array(bi)

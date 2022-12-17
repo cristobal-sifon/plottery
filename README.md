@@ -29,7 +29,16 @@ Below is a brief description of each module's functions. See their help pages fo
         contour_levels -- Calculate contour levels at chosen percentiles for 2-dimensional data.
         corner -- Make a corner plot.
 
----
-*Last updated: Jun 2021*
 
-*(c) Cristóbal Sifón 2013-2021*
+## Changelog
+
+* v0.6.6 (Dec 2022):
+    - `statsplots.corner` supports strings in `bins` and `bins1d` for automatic bin width calculation
+* v0.6.5 (Dec 2022):
+    - `statsplots.corner` bug fix when attempting to plot likelihood in diagonal panels (#27)
+
+
+---
+*Last updated: Dec 2022*
+
+*(c) Cristóbal Sifón 2013-2022*
