@@ -92,6 +92,8 @@ def corner(
     background=None,
     bweight=None,
     bcolor="r",
+    vmin=0,
+    vmax=1,
     alpha=0.5,
     limits=None,
     show_likelihood_1d=True,
@@ -187,6 +189,7 @@ def corner(
       bcolor    : color property, consistent with *background*
                   color of the points or filled contours, or colormap of the
                   2d density background.
+      vmin, vmax : colormap limits. NOT YET IMPLEMENTED
       alpha     : float between 0 and 1
                   transparency of the points if shown
       limits    : list of length-2 lists
@@ -425,8 +428,6 @@ def corner(
             else:
                 ax.set_xticks(ticks[i])
             plt.xticks(rotation=45)
-            if limits is not None:
-                ax.set_xlim(*limits[i])
             ax.set_ylim(0, 1.1 * peak)
             if i != ndim - 1:
                 ax.set_xticklabels([])
@@ -464,7 +465,14 @@ def corner(
                     Xm_i = Xm[i]
                     Xm_j = Xm[j]
                 if contour_reference == "likelihood":
-                    ax.contour(Xm_j, Xm_i, lnlike, levels=clevels, linewidths=1)
+                    ax.contour(
+                        Xm_j,
+                        Xm_i,
+                        lnlike,
+                        levels=clevels,
+                        linewidths=1,
+                        **contour_kwargs,
+                    )
                 elif contour_reference == "samples":
                     h = np.histogram2d(Xm_j, Xm_i, bins=bins[m][i])
                     h, xe, ye = np.histogram2d(Xm_j, Xm_i, bins=bins[m][i])
@@ -510,11 +518,20 @@ def corner(
                     except TypeError:
                         pass
                     if cmap is not None:
-                        kw = dict(cmap=cmap)
+                        cmap = plt.get_cmap(cmap)
+                        c = np.linspace(vmin, vmax, lvs.size)
+                        colors = cmap((c[:-1] + c[1:]) / 2)
                     else:
-                        kw = dict(colors=bcolor[::-1])
-                    ax.contourf(h, lvs, extent=extent, **kw)
-                if show_contour:
+                        colors = bcolor[::-1]
+                    ax.contourf(
+                        h,
+                        lvs,
+                        extent=extent,
+                        linestyles=ls2d[m],
+                        colors=colors,
+                        **contour_kwargs,
+                    )
+                if show_contour:  # and background != "filled":
                     ax.contour(
                         h,
                         levels[::-1],
@@ -558,6 +575,14 @@ def corner(
                     ax.yaxis.set_major_locator(plt.MaxNLocator(3))
                 for tick in ax.get_xticklabels():
                     tick.set_rotation(45)
+
+    if limits is None:
+        limits = [ax.get_xlim() for ax in axes[-1][:-1]] + [axes[-1][0].get_ylim()]
+        for i, row in enumerate(axes):
+            for j, ax in enumerate(row):
+                ax.set_xlim(limits[j])
+                if i != j:
+                    ax.set_ylim(limits[i])
 
     if (len(X) == 1 and isinstance(names, six.string_types)) or (
         hasattr(names, "__iter__") and len(names) == len(X)
