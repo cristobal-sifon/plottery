@@ -211,7 +211,8 @@ def corner(
                       * 'frameon': False
                       * 'bbox_to_anchor': (0.95,0.95)
                       * 'bbox_transform': plt.gcf().transFigure
-      contour_kwargs : keyword arguments to be passed to plt.contour()
+      contour_kwargs : keyword arguments to be passed to ``plt.contourf``
+                  (if background=="filled") or ``plt.contour``
 
 
     Returns
@@ -500,26 +501,19 @@ def corner(
                 elif background == "filled":
                     lvs = contour_levels(Xm_j, Xm_i, bins=bins[m][i], levels=clevels)
                     lvs = np.append(lvs[::-1], h.max())
+                    # what's this supposed to test?
                     try:
-                        if hasattr(bcolor[0], "__iter__"):
+                        if not isinstance(bcolor[0], str) and hasattr(
+                            bcolor[0], "__iter__"
+                        ):
                             bcolor = [bc for bc in bcolor]
                     except TypeError:
                         pass
                     if cmap is not None:
-                        ax.contourf(h, lvs, extent=extent, cmap=cmap)
+                        kw = dict(cmap=cmap)
                     else:
-                        for l in range(len(levels), 0, -1):
-                            lc = -l + 1
-                            if isinstance(bcolor[lc][0], float) and not hasattr(
-                                bcolor[lc][0], "__iter__"
-                            ):
-                                bcolor[lc] = [bcolor[lc]]
-                            ax.contourf(
-                                h,
-                                (lvs[l - 1], lvs[l]),
-                                extent=extent,
-                                colors=bcolor[lc],
-                            )
+                        kw = dict(colors=bcolor[::-1])
+                    ax.contourf(h, lvs, extent=extent, **kw)
                 if show_contour:
                     ax.contour(
                         h,
