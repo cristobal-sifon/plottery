@@ -408,7 +408,7 @@ def corner(
                 # normalized to the histogram area
                 Lmbinned = np.exp(Lmbinned)
                 Lmbinned -= Lmbinned.min()
-                Lmbinned /= Lmbinned.sum() / area
+                Lmbinned /= Lmbinned.max() / peak
                 ax.plot(
                     xo[valid], Lmbinned, "-", color=color_likelihood, lw=1, zorder=-10
                 )

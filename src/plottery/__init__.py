@@ -8,4 +8,4 @@ Custom plotting utilities
 
 __all__ = ("astroplots", "colormaps", "plotutils", "statsplots")
 __author__ = "Cristobal Sifon"
-__version__ = "0.6.7dev2"
+__version__ = "0.6.7dev3"
