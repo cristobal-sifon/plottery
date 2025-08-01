@@ -32,6 +32,8 @@ Below is a brief description of each module's functions. See their help pages fo
 
 ## Changelog
 
+* v0.7.0 (Aug 2025):
+    - `astLib` no longer required if not using `astroplots.contour_overlay`
 * v0.6.6 (Dec 2022):
     - `statsplots.corner` supports strings in `bins` and `bins1d` for automatic bin width calculation
 * v0.6.5 (Dec 2022):
@@ -39,6 +41,6 @@ Below is a brief description of each module's functions. See their help pages fo
 
 
 ---
-*Last updated: Dec 2022*
+*Last updated: Aug 2025*
 
-*(c) Cristóbal Sifón 2013-2022*
+*(c) Cristóbal Sifón 2013-2025*
